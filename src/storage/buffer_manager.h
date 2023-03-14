@@ -3,10 +3,10 @@
 
 #include <list>
 
-#include "defines.h"
-#include "log/log_manager.h"
-#include "storage/disk_manager.h"
-#include "storage/page.h"
+#include "../defines.h"
+#include "../log/log_manager.h"
+#include "../storage/disk_manager.h"
+#include "../storage/page.h"
 
 namespace dbtrain {
 

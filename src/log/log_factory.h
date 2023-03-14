@@ -1,7 +1,7 @@
 #ifndef DBTRAIN_LOG_FACTORY_H
 #define DBTRAIN_LOG_FACTORY_H
 
-#include "defines.h"
+#include "../defines.h"
 #include "log.h"
 
 namespace dbtrain {

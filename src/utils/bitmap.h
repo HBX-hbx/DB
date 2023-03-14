@@ -22,6 +22,8 @@ class Bitmap {
   int FirstBit(bool bit);
   int NextBit(int base, bool bit);
   bool Full();
+  bool Empty();
+  void Display();
 
  private:
   int GetBucket(int pos);

@@ -3,19 +3,19 @@
 
 #include <string>
 
-#include "defines.h"
-#include "record/record.h"
-#include "result/result.h"
-#include "storage/buffer_manager.h"
-#include "table/page_handle.h"
-#include "table/table_meta.h"
+#include "../defines.h"
+#include "../record/record.h"
+#include "../result/result.h"
+#include "../storage/buffer_manager.h"
+#include "../table/page_handle.h"
+#include "../table/table_meta.h"
 
 namespace dbtrain {
 
 class Table {
  public:
   Table(const std::string &table_name, int meta_fd, int data_fd);
-  Table(const std::string &talbe_name, int meta_fd, int data_fd, const std::vector<Column> &columns);
+  Table(const std::string &table_name, int meta_fd, int data_fd, const std::vector<Column> &columns);
   ~Table();
 
   Result Desc();

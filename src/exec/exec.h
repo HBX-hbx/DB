@@ -1,8 +1,8 @@
 #ifndef DBTRAIN_EXECUTOR_H
 #define DBTRAIN_EXECUTOR_H
 
-#include "defines.h"
-#include "oper/oper_node.h"
+#include "../defines.h"
+#include "../oper/oper_node.h"
 
 namespace dbtrain {
 

@@ -3,7 +3,7 @@
 
 #include "conditions/condition.h"
 #include "oper_node.h"
-#include "table/table.h"
+#include "../table/table.h"
 
 namespace dbtrain {
 

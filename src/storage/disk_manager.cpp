@@ -6,9 +6,9 @@
 
 #include <iostream>
 
-#include "defines.h"
-#include "exception/exceptions.h"
-#include "storage/buffer_manager.h"
+#include "../defines.h"
+#include "../exception/exceptions.h"
+#include "../storage/buffer_manager.h"
 
 namespace dbtrain {
 

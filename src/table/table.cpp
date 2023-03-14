@@ -1,15 +1,16 @@
 #include "table.h"
 
 #include <algorithm>
-
-#include "exception/exceptions.h"
-#include "exception/table_exceptions.h"
-#include "log/log_manager.h"
-#include "record/fields.h"
-#include "record/record_factory.h"
-#include "result/result.h"
-#include "table/hidden.h"
-#include "tx/tx_manager.h"
+#include <iostream>
+#include "../exception/exceptions.h"
+#include "../exception/table_exceptions.h"
+#include "../log/log_manager.h"
+#include "../record/fields.h"
+#include "../record/record_factory.h"
+#include "../result/result.h"
+#include "../table/hidden.h"
+#include "../tx/tx_manager.h"
+#include "page_handle.h"
 
 namespace dbtrain {
 
@@ -97,6 +98,7 @@ PageHandle Table::GetPage(PageID page_id) {
 }
 
 void Table::InsertRecord(Record *record) {
+  std::cerr << "< ---------------- Table::InsertRecord --------------- >\n";
   if (record->GetSize() != meta_.cols_.size()) {
     throw InvalidInsertCountError(record->GetSize(), meta_.cols_.size());
   }
@@ -131,10 +133,25 @@ void Table::InsertRecord(Record *record) {
   // TIPS: 调用page_handler的InsertRecord()方法插入记录
   // TIPS: 若当前页面已满，则将meta_.first_free_设为下一个有空位的页面，同时将meta_modified设为true
   // LAB 1 BEGIN
+  std::cerr << "before meta.first_free: " << meta_.first_free_ << "\n";
+  PageHandle page_handle;
+  if (meta_.first_free_ == NULL_PAGE) {
+    page_handle = CreatePage();
+  } else {
+    page_handle = GetPage(meta_.first_free_);
+  }
+  page_handle.InsertRecord(record);
+  if (page_handle.Full()) {
+    std::cerr << "------ full! ------\n";
+    meta_.first_free_ = page_handle.GetNextFree();
+    meta_modified = true;
+  }
+  std::cerr << "after meta.first_free: " << meta_.first_free_ << "\n";
   // LAB 1 END
 }
 
 void Table::DeleteRecord(const Rid &rid) {
+  std::cerr << "< ---------------- Table::DeleteRecord --------------- >\n";
   // TODO: 添加数据删除日志信息
   // TIPS: 注意ARIES使用的是WAL，所以需要先写入日志，再更新数据
   // TIPS: 利用LogManager对应函数记录日志
@@ -152,10 +169,14 @@ void Table::DeleteRecord(const Rid &rid) {
   // TIPS: 利用DeleteRecord删除对应SlotID的记录
   // TIPS: 注意更新Meta的first_free_信息
   // LAB 1 BEGIN
+  PageHandle page_handle = GetPage(rid.page_no);
+  page_handle.DeleteRecord(rid.slot_no);
+  meta_.first_free_ = rid.page_no;
   // LAB 1 END
 }
 
 void Table::UpdateRecord(const Rid &rid, Record *record) {
+  std::cerr << "< ---------------- Table::UpdateRecord --------------- >\n";
   // TODO: 添加数据更新日志信息
   // TIPS: 注意ARIES使用的是WAL，所以需要先写入日志，再更新数据
   // TIPS: 利用LogManager对应函数记录日志
@@ -173,6 +194,8 @@ void Table::UpdateRecord(const Rid &rid, Record *record) {
   // TIPS: 利用PageID查找对应的页面，通过PageHandle解析页面
   // TIPS: 利用UpdateRecord更新对应SlotID的记录为record
   // LAB 1 BEGIN
+  PageHandle page_handle = GetPage(rid.page_no);
+  page_handle.UpdateRecord(rid.slot_no, record);
   // LAB 1 END
 }
 

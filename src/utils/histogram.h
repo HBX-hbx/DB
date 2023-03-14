@@ -1,7 +1,7 @@
 #ifndef DBTRAIN_HISTGRAM_H
 #define DBTRAIN_HISTGRAM_H
 
-#include "defines.h"
+#include "../defines.h"
 
 namespace dbtrain {
 

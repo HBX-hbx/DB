@@ -4,17 +4,17 @@
 #include <thread>
 #include <unordered_map>
 
-#include "exception/exceptions.h"
-#include "exec/exec.h"
-#include "oper/conditions/conditions.h"
-#include "oper/tx_node.h"
-#include "optim/optim.h"
-#include "parser/preprocessor.h"
-#include "record/fields.h"
-#include "record/record.h"
-#include "result/print_buffer.h"
-#include "result/result.h"
-#include "system/system_manager.h"
+#include "../exception/exceptions.h"
+#include "../exec/exec.h"
+#include "../oper/conditions/conditions.h"
+#include "../oper/tx_node.h"
+#include "../optim/optim.h"
+#include "../parser/preprocessor.h"
+#include "../record/fields.h"
+#include "../record/record.h"
+#include "../result/print_buffer.h"
+#include "../result/result.h"
+#include "../system/system_manager.h"
 
 namespace dbtrain {
 

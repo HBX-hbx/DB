@@ -1,8 +1,8 @@
 #ifndef DBTRAIN_OPER_NODE_H
 #define DBTRAIN_OPER_NODE_H
 
-#include "defines.h"
-#include "record/record.h"
+#include "../defines.h"
+#include "../record/record.h"
 
 namespace dbtrain {
 

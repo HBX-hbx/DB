@@ -1,6 +1,6 @@
 #include "str_field.h"
 
-#include "exception/record_exceptions.h"
+#include "../exception/record_exceptions.h"
 
 namespace dbtrain {
 

@@ -2,7 +2,7 @@
 #define DBTRAIN_JOIN_CONDITION_H
 
 #include "condition.h"
-#include "record/record.h"
+#include "../../record/record.h"
 
 namespace dbtrain {
 

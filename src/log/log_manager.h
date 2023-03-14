@@ -4,7 +4,7 @@
 #include <map>
 #include <mutex>
 
-#include "defines.h"
+#include "../defines.h"
 #include "log.h"
 
 namespace dbtrain {

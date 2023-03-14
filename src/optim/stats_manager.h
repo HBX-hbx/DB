@@ -4,9 +4,9 @@
 #include <map>
 #include <set>
 
-#include "defines.h"
-#include "record/record.h"
-#include "utils/histogram.h"
+#include "../defines.h"
+#include "../record/record.h"
+#include "../utils/histogram.h"
 
 namespace dbtrain {
 

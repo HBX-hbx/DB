@@ -1,7 +1,7 @@
 #include "scan_node.h"
-
-#include "optim/stats_manager.h"
-#include "tx/tx_manager.h"
+#include <iostream>
+#include "../optim/stats_manager.h"
+#include "../tx/tx_manager.h"
 
 namespace dbtrain {
 
@@ -10,10 +10,13 @@ TableScanNode::TableScanNode(Table *table) : OperNode({}), table_(table) { cur_p
 TableScanNode::~TableScanNode() {}
 
 RecordList TableScanNode::Next() {
+  std::cerr << "< ------------- TableScanNode::Next() ------------- >\n";
   XID xid = TxManager::GetInstance().Get(std::this_thread::get_id());
   auto active_xids = TxManager::GetInstance().GetActiveSet(xid);
   RecordList outlist = {};
   while (outlist.size() == 0) {
+    std::cerr << " -------------- in the loop -------------- \n";
+    std::cerr << "xid: " << xid << "\n";
     if (cur_page_ >= table_->GetMeta().GetTableEnd()) return {};
     PageHandle page_handle = table_->GetPage(cur_page_);
     if (xid == INVALID_XID)
@@ -22,6 +25,7 @@ RecordList TableScanNode::Next() {
       outlist = page_handle.LoadRecords(xid, active_xids);
     ++cur_page_;
   }
+  std::cerr << "record list size: " << outlist.size() << "\n";
   return outlist;
 }
 

@@ -1,7 +1,7 @@
 #ifndef DBTRAIN_RECORD_EXCEPTION_H
 #define DBTRAIN_RECORD_EXCEPTION_H
 
-#include "exception/exceptions.h"
+#include "../exception/exceptions.h"
 
 namespace dbtrain {
 

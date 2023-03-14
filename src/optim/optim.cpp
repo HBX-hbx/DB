@@ -4,15 +4,15 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "exception/exceptions.h"
-#include "exception/table_exceptions.h"
-#include "oper/conditions/conditions.h"
-#include "oper/conditions/join_condition.h"
-#include "oper/nodes.h"
+#include "../exception/exceptions.h"
+#include "../exception/table_exceptions.h"
+#include "../oper/conditions/conditions.h"
+#include "../oper/conditions/join_condition.h"
+#include "../oper/nodes.h"
 #include "stats_manager.h"
-#include "system/system_manager.h"
-#include "utils/graph.h"
-#include "utils/uf_set.h"
+#include "../system/system_manager.h"
+#include "../utils/graph.h"
+#include "../utils/uf_set.h"
 
 namespace dbtrain {
 

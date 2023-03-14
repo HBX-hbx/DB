@@ -1,8 +1,8 @@
 #ifndef DBTRAIN_CONDITION_H
 #define DBTRAIN_CONDITION_H
 
-#include "defines.h"
-#include "record/record.h"
+#include "../../defines.h"
+#include "../../record/record.h"
 
 namespace dbtrain {
 

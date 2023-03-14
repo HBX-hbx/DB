@@ -1,9 +1,9 @@
 #ifndef DBTRAIN_RECORD_FACTORY_H
 #define DBTRAIN_RECORD_FACTORY_H
 
-#include "defines.h"
+#include "../defines.h"
 #include "record.h"
-#include "table/table_meta.h"
+#include "../table/table_meta.h"
 
 namespace dbtrain {
 

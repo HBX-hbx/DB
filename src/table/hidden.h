@@ -1,7 +1,7 @@
 #ifndef DBTRAIN_HIDDEN_H
 #define DBTRAIN_HIDDEN_H
 
-#include "defines.h"
+#include "../defines.h"
 #include "table_meta.h"
 
 namespace dbtrain {

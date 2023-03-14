@@ -3,11 +3,11 @@
 
 #include <set>
 
-#include "defines.h"
-#include "storage/buffer_manager.h"
-#include "storage/page.h"
-#include "table/table_meta.h"
-#include "utils/bitmap.h"
+#include "../defines.h"
+#include "../storage/buffer_manager.h"
+#include "../storage/page.h"
+#include "../table/table_meta.h"
+#include "../utils/bitmap.h"
 
 namespace dbtrain {
 

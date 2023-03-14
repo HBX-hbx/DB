@@ -1,7 +1,7 @@
 #ifndef DBTRAIN_FIELD_H
 #define DBTRAIN_FIELD_H
 
-#include "defines.h"
+#include "../defines.h"
 
 namespace dbtrain {
 

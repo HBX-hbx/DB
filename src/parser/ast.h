@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-#include "defines.h"
-#include "record/fields.h"
+#include "../defines.h"
+#include "../record/fields.h"
 
 namespace dbtrain {
 

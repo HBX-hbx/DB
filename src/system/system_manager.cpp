@@ -3,14 +3,14 @@
 #include <algorithm>
 #include <iostream>
 
-#include "defines.h"
-#include "exception/exceptions.h"
-#include "log/log_factory.h"
-#include "log/log_manager.h"
-#include "optim/stats_manager.h"
-#include "record/fields.h"
-#include "record/record_factory.h"
-#include "table/hidden.h"
+#include "../defines.h"
+#include "../exception/exceptions.h"
+#include "../log/log_factory.h"
+#include "../log/log_manager.h"
+#include "../optim/stats_manager.h"
+#include "../record/fields.h"
+#include "../record/record_factory.h"
+#include "../table/hidden.h"
 
 namespace dbtrain {
 

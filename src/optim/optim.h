@@ -3,13 +3,13 @@
 
 #include <unordered_map>
 
-#include "defines.h"
-#include "oper/conditions/condition.h"
-#include "oper/conditions/join_condition.h"
-#include "oper/oper_node.h"
-#include "parser/ast.h"
-#include "parser/visitor.h"
-#include "system/system_manager.h"
+#include "../defines.h"
+#include "../oper/conditions/condition.h"
+#include "../oper/conditions/join_condition.h"
+#include "../oper/oper_node.h"
+#include "../parser/ast.h"
+#include "../parser/visitor.h"
+#include "../system/system_manager.h"
 
 namespace dbtrain {
 

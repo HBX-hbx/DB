@@ -4,11 +4,11 @@
 #include <string>
 #include <unordered_map>
 
-#include "log/log_manager.h"
-#include "oper/conditions/conditions.h"
-#include "result/result.h"
-#include "storage/disk_manager.h"
-#include "table/table.h"
+#include "../log/log_manager.h"
+#include "../oper/conditions/conditions.h"
+#include "../result/result.h"
+#include "../storage/disk_manager.h"
+#include "../table/table.h"
 
 namespace dbtrain {
 

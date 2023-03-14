@@ -1,8 +1,8 @@
 #include "bitmap.h"
 
 #include <cstring>
-
-#include "defines.h"
+#include <iostream>
+#include "../defines.h"
 
 namespace dbtrain {
 
@@ -12,13 +12,24 @@ Bitmap::Bitmap(uint8_t *data, int size) : data_(data), size_(size) {}
 
 void Bitmap::Init() { memset(data_, 0, ((size_ - 1) / BITMAP_WIDTH) + 1); }
 
-void Bitmap::Set(int pos) { data_[GetBucket(pos)] |= GetBit(pos); }
+void Bitmap::Set(int pos) { std::cerr << "Bitmap::Setting "<< pos << "!\n"; data_[GetBucket(pos)] |= GetBit(pos); }
 
-void Bitmap::Reset(int pos) { data_[GetBucket(pos)] &= ~GetBit(pos); }
+void Bitmap::Reset(int pos) { std::cerr << "Bitmap::Resetting "<< pos << "!\n"; data_[GetBucket(pos)] &= ~GetBit(pos); }
 
 bool Bitmap::Test(int pos) { return data_[GetBucket(pos)] & GetBit(pos); }
 
 bool Bitmap::Full() { return FirstBit(false) == -1; }
+
+bool Bitmap::Empty() { return FirstBit(true) == -1; }
+
+void Bitmap::Display() {
+  std::cerr << "< ------- Display -------- >\n";
+  std::cerr << "size: " << size_ << "\n";
+  for (size_t i = 0; i < size_; i++) {
+    printf("%02X ", data_[i]);
+  }
+  std::cerr << "\n< ------- Display End -------- >\n";
+}
 
 int Bitmap::FirstFree() { return FirstBit(false); }
 

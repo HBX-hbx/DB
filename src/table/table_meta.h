@@ -1,10 +1,10 @@
 #ifndef DBTRAIN_TABLE_META_H
 #define DBTRAIN_TABLE_META_H
 
-#include "defines.h"
-#include "record/field.h"
-#include "record/record.h"
-#include "result/result.h"
+#include "../defines.h"
+#include "../record/field.h"
+#include "../record/record.h"
+#include "../result/result.h"
 
 namespace dbtrain {
 

@@ -1,6 +1,6 @@
 #include "int_field.h"
 
-#include "exception/record_exceptions.h"
+#include "../exception/record_exceptions.h"
 #include "float_field.h"
 
 namespace dbtrain {

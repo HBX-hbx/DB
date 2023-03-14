@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "record/record.h"
+#include "../record/record.h"
 
 namespace dbtrain {
 

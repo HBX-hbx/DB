@@ -2,9 +2,10 @@
 
 #include <cassert>
 #include <set>
+#include <iostream>
 
-#include "record/record_factory.h"
-#include "tx/lock_manager.h"
+#include "../record/record_factory.h"
+#include "../tx/lock_manager.h"
 
 namespace dbtrain {
 
@@ -18,16 +19,29 @@ PageHandle::PageHandle(Page *page, const TableMeta &meta)
 }
 
 void PageHandle::InsertRecord(Record *record) {
+  std::cerr << "< ----------------- PageHandle::InsertRecord ---------------- >\n";
   // 获取排它锁
   LockManager &lock_manager = LockManager::GetInstance();
   lock_manager.Lock("Page" + std::to_string(page_->GetPageId().page_no));
   // TODO: 插入记录
-  // TIPS: 通过bitmap_.FirstFree()获取第一个空槽
-  // TIPS: 使用RecordFactory::SetRid设置record的rid
-  // TIPS: 使用RecordFactory的StoreRecord方法将record序列化到页面中
-  // TIPS: 将bitmap_的第一个空槽标记为已使用
-  // TIPS: 将page_标记为dirty
   // LAB 1 BEGIN
+  // TIPS: 通过bitmap_.FirstFree()获取第一个空槽
+  int free_slot = bitmap_.FirstFree();
+  // TIPS: 使用RecordFactory::SetRid设置record的rid
+  Rid rid;
+  rid.page_no = page_->GetPageId().page_no;
+  rid.slot_no = free_slot;
+  RecordFactory::SetRid(record, rid);
+  // TIPS: 使用RecordFactory的StoreRecord方法将record序列化到页面中
+  RecordFactory record_factory(&meta_);
+  // bitmap_.Display();
+  record_factory.StoreRecord(slots_ + free_slot * record_length_, record);
+  // TIPS: 将bitmap_的第一个空槽标记为已使用
+  bitmap_.Set(free_slot);
+  // bitmap_.Display();
+  // TIPS: 将page_标记为dirty
+  page_->SetDirty();
+  std::cerr << "free_slot: " << free_slot << "\n";
   // LAB 1 END
   // LAB 2: 设置页面LSN
   SetLSN(LogManager::GetInstance().GetCurrent());
@@ -36,6 +50,7 @@ void PageHandle::InsertRecord(Record *record) {
 }
 
 void PageHandle::DeleteRecord(SlotID slot_no) {
+  std::cerr << "< ----------------- PageHandle::DeleteRecord ---------------- >\n";
   // 获取排他锁
   LockManager &lock_manager = LockManager::GetInstance();
   lock_manager.Lock("Page" + std::to_string(page_->GetPageId().page_no));
@@ -43,6 +58,10 @@ void PageHandle::DeleteRecord(SlotID slot_no) {
   // TIPS: 直接设置bitmap_为0即可删除对应记录
   // TIPS: 将page_标记为dirty
   // LAB 1 BEGIN
+  // bitmap_.Display();
+  bitmap_.Reset(slot_no);
+  // bitmap_.Display();
+  page_->SetDirty();
   // LAB 1 END
   // LAB 2: 设置页面LSN
   SetLSN(LogManager::GetInstance().GetCurrent());
@@ -51,6 +70,7 @@ void PageHandle::DeleteRecord(SlotID slot_no) {
 }
 
 void PageHandle::UpdateRecord(SlotID slot_no, Record *record) {
+  std::cerr << "< ----------------- PageHandle::UpdateRecord ---------------- >\n";
   // 获取排他锁
   LockManager &lock_manager = LockManager::GetInstance();
   lock_manager.Lock("Page" + std::to_string(page_->GetPageId().page_no));
@@ -58,6 +78,9 @@ void PageHandle::UpdateRecord(SlotID slot_no, Record *record) {
   // TIPS: 由于使用了定长数据管理，可以利用新的record序列化结果覆盖对应页面数据
   // TIPS: 将page_标记为dirty
   // LAB 1 BEGIN
+  RecordFactory record_factory(&meta_);
+  record_factory.StoreRecord(slots_ + slot_no * record_length_, record);
+  page_->SetDirty();
   // LAB 1 END
   // 设置页面LSN
   SetLSN(LogManager::GetInstance().GetCurrent());
@@ -66,6 +89,7 @@ void PageHandle::UpdateRecord(SlotID slot_no, Record *record) {
 }
 
 RecordList PageHandle::LoadRecords() {
+  std::cerr << "< ----------------- PageHandle::LoadRecords ---------------- >\n";
   // 获取共享锁
   LockManager &lock_manager = LockManager::GetInstance();
   lock_manager.LockShared("Page" + std::to_string(page_->GetPageId().page_no));
@@ -73,6 +97,8 @@ RecordList PageHandle::LoadRecords() {
   RecordFactory record_factory(&meta_);
   std::vector<Record *> record_vector;
   while ((slot_no = bitmap_.NextNotFree(slot_no)) != -1) {
+    std::cerr << "< ----------------- finding one slot not free ---------------- >\n";
+    std::cerr << "free_slot: " << slot_no << "\n";
     Record *record = record_factory.LoadRecord(slots_ + slot_no * record_length_);
     record_vector.push_back(record);
   }
@@ -163,6 +189,7 @@ void PageHandle::DeleteRecord(SlotID slot_no, XID xid, bool) {
 }
 
 RecordList PageHandle::LoadRecords(XID xid, const std::set<XID> &uncommit_xids) {
+  std::cerr << "< ----------------- PageHandle::LoadRecords ---------------- >\n";
   // 获取共享锁
   LockManager &lock_manager = LockManager::GetInstance();
   lock_manager.LockShared("Page" + std::to_string(page_->GetPageId().page_no));
@@ -174,6 +201,8 @@ RecordList PageHandle::LoadRecords(XID xid, const std::set<XID> &uncommit_xids) 
   RecordFactory record_factory(&meta_);
   while ((slot_no = bitmap_.NextNotFree(slot_no)) != -1) {
     Record *record = record_factory.LoadRecord(slots_ + slot_no * record_length_);
+    std::cerr << "< ----------------- finding one slot not free ---------------- >\n";
+    std::cerr << "free_slot: " << slot_no << "\n";
     // TODO: MVCC情况下的数据读取
     // TIPS: 注意MVCC在数据读取过程中存在无效数据（未提交的删除以及未开始的插入），注意去除
     // LAB 3 BEGIN

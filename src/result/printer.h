@@ -1,7 +1,7 @@
 #ifndef DBTRAIN_PRINTER_H
 #define DBTRAIN_PRINTER_H
 
-#include "result/result.h"
+#include "../result/result.h"
 
 namespace dbtrain {
 
