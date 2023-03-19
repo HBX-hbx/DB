@@ -1,4 +1,5 @@
 #include "str_field.h"
+#include <cstring>
 
 #include "../exception/record_exceptions.h"
 
@@ -30,6 +31,10 @@ void StrField::Store(void *dst, int s) const {
   }
 }
 FieldType StrField::GetType() const { return FieldType::STRING; }
+
+int StrField::GetSize() const {
+  return strlen(val_) + 1;
+}
 
 Field *StrField::Copy() const { return new StrField(val_, size_); }
 

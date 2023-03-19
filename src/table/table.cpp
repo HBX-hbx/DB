@@ -22,22 +22,25 @@ Table::Table(const std::string &table_name, int meta_fd, int data_fd)
 
 Table::Table(const std::string &table_name, int meta_fd, int data_fd, const std::vector<Column> &columns)
     : table_name_(table_name), meta_fd_(meta_fd), data_fd_(data_fd), buffer_manager_(BufferManager::GetInstance()) {
-  meta_.record_length_ = 0;
+  // meta_.record_length_ = 0;
   for (auto &col : columns) {
-    meta_.record_length_ += col.len_;
+    // meta_.record_length_ += col.len_;
+    std::cerr << "col_type: " << (int)col.type_ << " col_name: " << col.name_  << " col_len: " << col.len_ << "\n";
     meta_.cols_.push_back(col);
   }
   // 元信息添加隐藏列
   for (const auto &col : hidden_columns) {
-    meta_.record_length_ += col.len_;
+    // meta_.record_length_ += col.len_;
+    std::cerr << "col_type: " << (int)col.type_ << " col_name: " << col.name_ << " col_len: " << col.len_ << "\n";
     meta_.cols_.push_back(col);
   }
+  std::cerr << "size: " << meta_.GetSize() << " len: " << meta_.GetLength() << "\n";
 
-  meta_.record_per_page_ = (BITMAP_WIDTH * (PAGE_SIZE - sizeof(PageHeader)) - (BITMAP_WIDTH - 1)) /
-                           (1 + BITMAP_WIDTH * meta_.record_length_);
+  // meta_.record_per_page_ = (BITMAP_WIDTH * (PAGE_SIZE - sizeof(PageHeader)) - (BITMAP_WIDTH - 1)) /
+  //                          (1 + BITMAP_WIDTH * meta_.record_length_);
   meta_.table_end_page_ = 0;
   meta_.first_free_ = NULL_PAGE;
-  meta_.bitmap_length_ = (meta_.record_per_page_ + BITMAP_WIDTH - 1) / BITMAP_WIDTH;
+  // meta_.bitmap_length_ = (meta_.record_per_page_ + BITMAP_WIDTH - 1) / BITMAP_WIDTH;
 
   Page *meta_page = buffer_manager_.AllocPage(meta_fd_, META_PAGE_NO);
   Store(meta_page->GetData());
@@ -87,7 +90,7 @@ PageHandle Table::CreatePage() {
   meta_modified = true;
   PageHandle page_handle = PageHandle(page, meta_);
   page_handle.header_->next_free = NULL_PAGE;
-  page_handle.bitmap_.Init();
+  // page_handle.bitmap_.Init();
   return page_handle;
 }
 
@@ -106,8 +109,8 @@ void Table::InsertRecord(Record *record) {
     if (meta_.cols_[i].type_ != record->GetField(i)->GetType()) {
       throw InvalidInsertTypeError(type2str[record->GetField(i)->GetType()], type2str[meta_.cols_[i].type_]);
     }
-    if (meta_.cols_[i].type_ == FieldType::STRING && meta_.cols_[i].len_ < record->GetField(i)->GetSize()) {
-      throw InvalidInsertStringLenError(record->GetField(i)->GetSize(), meta_.cols_[i].len_);
+    if (meta_.cols_[i].type_ == FieldType::STRING && meta_.cols_[i].len_ < record->GetField(i)->GetSize() - 1) {
+      throw InvalidInsertStringLenError(record->GetField(i)->GetSize() - 1, meta_.cols_[i].len_);
     }
   }
 
@@ -140,11 +143,21 @@ void Table::InsertRecord(Record *record) {
   } else {
     page_handle = GetPage(meta_.first_free_);
   }
-  page_handle.InsertRecord(record);
-  if (page_handle.Full()) {
+  bool success;
+  std::cerr << "record info size: " << page_handle.header_->record_num << "\n";
+  // page_handle.Display();
+  page_handle.InsertRecord(record, &success);
+  if (!success) {
     std::cerr << "------ full! ------\n";
     meta_.first_free_ = page_handle.GetNextFree();
     meta_modified = true;
+    
+    if (meta_.first_free_ == NULL_PAGE) {
+      page_handle = CreatePage();
+    } else {
+      page_handle = GetPage(meta_.first_free_);
+    }
+    page_handle.InsertRecord(record, &success);
   }
   std::cerr << "after meta.first_free: " << meta_.first_free_ << "\n";
   // LAB 1 END
@@ -195,7 +208,12 @@ void Table::UpdateRecord(const Rid &rid, Record *record) {
   // TIPS: 利用UpdateRecord更新对应SlotID的记录为record
   // LAB 1 BEGIN
   PageHandle page_handle = GetPage(rid.page_no);
-  page_handle.UpdateRecord(rid.slot_no, record);
+  bool success;
+  // page_handle.Display();
+  page_handle.UpdateRecord(rid.slot_no, record, &success);
+  if (!success) {
+    InsertRecord(record);
+  }
   // LAB 1 END
 }
 

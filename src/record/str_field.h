@@ -19,6 +19,7 @@ class StrField : public Field {
   virtual Field *Copy() const override;
   virtual std::string ToString() const override;
   string GetValue() const;
+  virtual int GetSize() const override;
 
  protected:
   char *val_;

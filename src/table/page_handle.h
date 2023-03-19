@@ -15,6 +15,13 @@ namespace dbtrain {
 struct PageHeader {
   LSN page_lsn;
   PageID next_free;
+  unsigned int record_num;
+};
+
+struct RecordInfo {
+  short length;  // 记录的长度
+  short offset;  // 记录偏移量
+  bool  is_del;  // 是否被删除
 };
 
 class PageHandle {
@@ -26,10 +33,12 @@ class PageHandle {
   ~PageHandle() = default;
 
   // 无并发接口
-  void InsertRecord(Record *record);
+  void InsertRecord(Record *record, bool* success);
   void DeleteRecord(SlotID slot_no);
-  void UpdateRecord(SlotID slot_no, Record *record);
+  void UpdateRecord(SlotID slot_no, Record *record, bool* success);
   RecordList LoadRecords();
+
+  void Display();
 
   // LAB 2: 新增部分函数方便后续实验
   uint8_t *GetRaw(SlotID slot_no);
@@ -54,10 +63,12 @@ class PageHandle {
   LSN GetLSN();
 
  private:
-  Bitmap bitmap_;
+  // Bitmap bitmap_;
   PageHeader *header_;
-  int record_length_;
-  uint8_t *slots_;
+  // int record_length_;
+  RecordInfo* record_info_; // 记录的长度和偏移量(相对 slots)
+  int* record_offset_; // 剩余空间结束位置(相对 slots)
+  uint8_t *slots_;  // 指向页尾
   Page *page_;
   TableMeta meta_;
 };

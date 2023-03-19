@@ -30,11 +30,11 @@ class TableMeta {
 
   // TIPS: Meta 信息，可自行添加字段
 
-  int record_length_; // 每条记录的长度
-  int record_per_page_; // 每一页存放多少条记录
+  // int record_length_; // 每条记录的长度
+  // int record_per_page_; // 每一页存放多少条记录
   int table_end_page_; // 表的最后一页 / 表的总页面数
   PageID first_free_; // 第一个有空闲槽位的页面
-  int bitmap_length_; // 页头 bitmap 的长度
+  // int bitmap_length_; // 页头 bitmap 的长度
 
   friend class Table;
   friend class PageHandle;

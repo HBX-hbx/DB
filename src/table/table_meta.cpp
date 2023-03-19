@@ -10,7 +10,7 @@ int TableMeta::Load(const uint8_t *src) {
   // TIPS: 函数目标是通过src反序列化成Meta结构体，通过memcpy函数可以完成这一工作
   // TIPS: 需要注意将所有信息全部保存，变长信息可以通过“长度+数据”的方式存储
   // LAB 1 BEGIN
-  // std::cerr << "< ------------- TableMeta::Load --------------- >\n";
+  std::cerr << "< ------------- TableMeta::Load --------------- >\n";
   size_t offset = 0;
   size_t size_of_cols = 0;
   memcpy(&size_of_cols, src + offset, sizeof(size_t));
@@ -34,19 +34,19 @@ int TableMeta::Load(const uint8_t *src) {
 
     cols_.push_back(col);
   }
-  memcpy(&record_length_, src + offset, sizeof(int));
+  // memcpy(&record_length_, src + offset, sizeof(int));
   // std::cerr << "record_length_: " << record_length_ << "\n";
-  offset += sizeof(int);
-  memcpy(&record_per_page_, src + offset, sizeof(int));
+  // offset += sizeof(int);
+  // memcpy(&record_per_page_, src + offset, sizeof(int));
   // std::cerr << "record_per_page_: " << record_per_page_ << "\n";
-  offset += sizeof(int);
+  // offset += sizeof(int);
   memcpy(&table_end_page_, src + offset, sizeof(int));
   // std::cerr << "table_end_page_: " << table_end_page_ << "\n";
   offset += sizeof(int);
   memcpy(&first_free_, src + offset, sizeof(PageID));
   // std::cerr << "first_free_: " << first_free_ << "\n";
   offset += sizeof(PageID);
-  memcpy(&bitmap_length_, src + offset, sizeof(int));
+  // memcpy(&bitmap_length_, src + offset, sizeof(int));
   // std::cerr << "bitmap_length_: " << bitmap_length_ << "\n";
   // std::cerr << "cols_[0]: " << cols_[0].len_ << " " << int(cols_[0].type_) << "\n";
 
@@ -59,7 +59,7 @@ int TableMeta::Store(uint8_t *dst) {
   // TIPS: 函数目标是将Meta信息序列化到dst中，通过memcpy函数可以完成这一工作
   // TIPS: 需要注意将所有信息全部读取，变长信息需要结合Load函数解析
   // LAB 1 BEGIN
-  // std::cerr << "< ------------- TableMeta::Store --------------- >\n";
+  std::cerr << "< ------------- TableMeta::Store --------------- >\n";
   size_t offset = 0;
   size_t size_of_cols = cols_.size();
   // variable length cols
@@ -78,19 +78,19 @@ int TableMeta::Store(uint8_t *dst) {
     memcpy(dst + offset, col.name_.c_str(), len_of_string);
     offset += len_of_string;
   }
-  memcpy(dst + offset, &record_length_, sizeof(int));
+  // memcpy(dst + offset, &record_length_, sizeof(int));
   // std::cerr << "record_length_: " << record_length_ << "\n";
-  offset += sizeof(int);
-  memcpy(dst + offset, &record_per_page_, sizeof(int));
+  // offset += sizeof(int);
+  // memcpy(dst + offset, &record_per_page_, sizeof(int));
   // std::cerr << "record_per_page_: " << record_per_page_ << "\n";
-  offset += sizeof(int);
+  // offset += sizeof(int);
   memcpy(dst + offset, &table_end_page_, sizeof(int));
   // std::cerr << "table_end_page_: " << table_end_page_ << "\n";
   offset += sizeof(int);
   memcpy(dst + offset, &first_free_, sizeof(PageID));
   // std::cerr << "first_free_: " << first_free_ << "\n";
   offset += sizeof(PageID);
-  memcpy(dst + offset, &bitmap_length_, sizeof(int));
+  // memcpy(dst + offset, &bitmap_length_, sizeof(int));
   // std::cerr << "bitmap_length_: " << bitmap_length_ << "\n";
   // std::cerr << "cols_[0]: " << cols_[0].len_ << " " << int(cols_[0].type_) << "\n";
   

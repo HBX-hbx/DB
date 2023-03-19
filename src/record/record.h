@@ -16,6 +16,7 @@ class Record {
   void PushBack(Field *field);
   Record *Copy() const;
   size_t GetSize() const;
+  size_t GetLength() const;
   void Display() const;
   std::vector<std::string> ToString() const;
 

@@ -29,9 +29,20 @@ Record *Record::Copy() const {
 
 size_t Record::GetSize() const { return field_list_.size(); }
 
+size_t Record::GetLength() const {
+  size_t length = 0;
+  for (const auto &field : field_list_) {
+    length += field->GetSize();
+    if (field->GetType() == FieldType::STRING) {
+      length += sizeof(int) * 2;
+    }
+  }
+  return length;
+}
+
 void Record::Display() const {
   for (Field *field : field_list_) {
-    std::cout << field->ToString() << " ";
+    std::cout << field->ToString() << "(" << field->GetSize() << ") ";
   }
   std::cout << std::endl;
 }

@@ -15,6 +15,7 @@
 #include "../result/print_buffer.h"
 #include "../result/result.h"
 #include "../system/system_manager.h"
+#include "ast.h"
 
 namespace dbtrain {
 

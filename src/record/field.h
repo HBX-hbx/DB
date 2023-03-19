@@ -18,7 +18,7 @@ class Field {
   virtual bool Less(Field *field) const = 0;
   virtual bool Greater(Field *field) const = 0;
   virtual std::string ToString() const = 0;
-  int GetSize() const;
+  virtual int GetSize() const;
 
  protected:
   int size_;
