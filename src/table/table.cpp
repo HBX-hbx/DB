@@ -136,30 +136,47 @@ void Table::InsertRecord(Record *record) {
   // TIPS: 调用page_handler的InsertRecord()方法插入记录
   // TIPS: 若当前页面已满，则将meta_.first_free_设为下一个有空位的页面，同时将meta_modified设为true
   // LAB 1 BEGIN
-  std::cerr << "before meta.first_free: " << meta_.first_free_ << "\n";
+  std::cerr << "table_end_page " << meta_.table_end_page_ << "\n";
   PageHandle page_handle;
-  if (meta_.first_free_ == NULL_PAGE) {
-    page_handle = CreatePage();
-  } else {
-    page_handle = GetPage(meta_.first_free_);
-  }
+
   bool success;
-  std::cerr << "record info size: " << page_handle.header_->record_num << "\n";
-  // page_handle.Display();
-  page_handle.InsertRecord(record, &success);
+  for (int pid = 0; pid < meta_.table_end_page_; ++pid) {
+    page_handle = GetPage(pid);
+    std::cerr << "record info size: " << page_handle.header_->record_num << "\n";
+    // page_handle.Display();
+    page_handle.InsertRecord(record, &success);
+    if (success) break;
+  }
   if (!success) {
-    std::cerr << "------ full! ------\n";
-    meta_.first_free_ = page_handle.GetNextFree();
-    meta_modified = true;
-    
-    if (meta_.first_free_ == NULL_PAGE) {
-      page_handle = CreatePage();
-    } else {
-      page_handle = GetPage(meta_.first_free_);
-    }
+    std::cerr << "creating page!\n";
+    page_handle = CreatePage();
+    std::cerr << "record info size: " << page_handle.header_->record_num << "\n";
+    // page_handle.Display();
     page_handle.InsertRecord(record, &success);
   }
-  std::cerr << "after meta.first_free: " << meta_.first_free_ << "\n";
+
+  // if (meta_.first_free_ == NULL_PAGE) {
+  //   page_handle = CreatePage();
+  // } else {
+  //   page_handle = GetPage(meta_.first_free_);
+  // }
+  // bool success;
+  // std::cerr << "record info size: " << page_handle.header_->record_num << "\n";
+  // // page_handle.Display();
+  // page_handle.InsertRecord(record, &success);
+  // if (!success) {
+  //   std::cerr << "------ full! ------\n";
+  //   meta_.first_free_ = page_handle.GetNextFree();
+  //   meta_modified = true;
+    
+  //   if (meta_.first_free_ == NULL_PAGE) {
+  //     page_handle = CreatePage();
+  //   } else {
+  //     page_handle = GetPage(meta_.first_free_);
+  //   }
+  //   page_handle.InsertRecord(record, &success);
+  // }
+  // std::cerr << "after meta.first_free: " << meta_.first_free_ << "\n";
   // LAB 1 END
 }
 

@@ -32,10 +32,11 @@ void PageHandle::InsertRecord(Record *record, bool* success) {
   int free_slot = -1;
   int record_info_size = header_->record_num;
   std::cerr << "size: " << record_info_size << "\n";
-  std::cerr << " < ---- record display: --- >\n";
+  // std::cerr << " < ---- record display: --- >\n";
   // record->Display();
   // 获得已删除的槽位，查看是否放得下
   for (int i = 0; i < record_info_size; ++i) {
+    std::cerr << "is del? " << record_info_[i].is_del << ", record_info_[i].length: " << record_info_[i].length << ", record->GetLength(): " << record->GetLength() << "\n";
     if (record_info_[i].is_del && (record_info_[i].length >= record->GetLength())) {
       free_slot = i;
       break;
@@ -45,7 +46,8 @@ void PageHandle::InsertRecord(Record *record, bool* success) {
   std::cerr << "before record offset: " << *record_offset_ << "\n";
   if (free_slot == -1) {
     // 没有空位或者放不下
-    int remain_space = PAGE_SIZE - *record_offset_ - sizeof(PageHeader) - sizeof(int) - sizeof(RecordInfo) * header_->record_num;
+    int remain_space = PAGE_SIZE - *record_offset_ - sizeof(PageHeader) - sizeof(int) - sizeof(RecordInfo) * (header_->record_num + 1);
+    std::cerr << "remain_space: " << remain_space << ", len: " << record->GetLength() << "\n";
     if (remain_space < record->GetLength()) {
       // 该页插入失败
       std::cerr << "space overflow!\n";
