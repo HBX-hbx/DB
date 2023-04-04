@@ -1,6 +1,6 @@
 #ifndef DBTRAIN_LOG_IMAGE_H
 #define DBTRAIN_LOG_IMAGE_H
-#include "defines.h"
+#include "../defines.h"
 
 namespace dbtrain {
 

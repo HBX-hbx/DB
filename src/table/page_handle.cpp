@@ -25,13 +25,15 @@ void PageHandle::InsertRecord(Record *record) {
   lock_manager.Lock("Page" + std::to_string(page_->GetPageId().page_no));
   // TODO: 插入记录
   // LAB 1 BEGIN
-  // TIPS: 通过bitmap_.FirstFree()获取第一个空槽
-  int free_slot = bitmap_.FirstFree();
-  // TIPS: 使用RecordFactory::SetRid设置record的rid
-  Rid rid;
-  rid.page_no = page_->GetPageId().page_no;
-  rid.slot_no = free_slot;
-  RecordFactory::SetRid(record, rid);
+  // // TIPS: 通过bitmap_.FirstFree()获取第一个空槽
+  // int free_slot = bitmap_.FirstFree();
+  // // TIPS: 使用RecordFactory::SetRid设置record的rid
+  // Rid rid;
+  // rid.page_no = page_->GetPageId().page_no;
+  // rid.slot_no = free_slot;
+  // RecordFactory::SetRid(record, rid);
+  Rid rid = RecordFactory::GetRid(record);
+  int free_slot = rid.slot_no;
   // TIPS: 使用RecordFactory的StoreRecord方法将record序列化到页面中
   RecordFactory record_factory(&meta_);
   // bitmap_.Display();

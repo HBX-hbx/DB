@@ -1,6 +1,7 @@
 #include "log_factory.h"
 
 #include "logs.h"
+#include "record/record.h"
 
 namespace dbtrain {
 

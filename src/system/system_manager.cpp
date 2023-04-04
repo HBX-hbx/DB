@@ -54,22 +54,28 @@ Result SystemManager::CreateDatabase(const std::string &db_name) {
 }
 
 Result SystemManager::UseDatabase(const std::string &db_name) {
+  std::cerr << "< ----- SystemManager::UseDatabase ----- >\n";
   if (db_name != using_db_) {
+    std::cerr << "< ----- 1 ----- >\n";
     if (std::find(db_names_.begin(), db_names_.end(), db_name) == db_names_.end()) {
       throw DatabaseNotExistsError(db_name);
     }
+    std::cerr << "< ----- 2 ----- >\n";
     if (!using_db_.empty()) {
       CloseDatabase(db_name);
     }
+    std::cerr << "< ----- 3 ----- >\n";
     if (using_db_.empty()) {
       disk_manager_.ChangeDirectory(db_name);
     } else {
       disk_manager_.ChangeDirectory("../" + db_name);
     }
+    std::cerr << "< ----- 4 ----- >\n";
     using_db_ = db_name;
     tables_.clear();
     std::vector<std::string> table_names;
     disk_manager_.ListTables(".", table_names);
+    std::cerr << "< ----- 5 ----- >\n";
     for (auto &table_name : table_names) {
       int meta_fd = disk_manager_.OpenFile(table_name + DB_META_SUFFIX);
       table2metafd_[table_name] = meta_fd;
@@ -256,6 +262,7 @@ void SystemManager::Flush() {
 }
 
 void SystemManager::Recover() {
+  std::cerr << "< ---------- SystemManager::Recover ------------ >\n";
   // TIPS: Recover算法
   LSN checkpoint_lsn = LoadMasterRecord();
   // Analyse过程
@@ -267,12 +274,16 @@ void SystemManager::Recover() {
 }
 
 void SystemManager::LoadLogManager() {
+  std::cerr << "< ---------- SystemManager::LoadLogManager ----------- >\n";
   if (using_db_.empty()) {
     throw NoUsingDatabaseError();
   }
+  std::cerr << "< ----- 6 ----- >\n";
   log_data_fd_ = disk_manager_.OpenFile(LOG_DATA);
   log_index_fd_ = disk_manager_.OpenFile(LOG_INDEX);
   LSN checkpoint_lsn = LoadMasterRecord();
+  std::cerr << "< ----- 7 ----- >\n";
+  std::cerr << "ckpt: " << checkpoint_lsn << "\n";
   if (checkpoint_lsn != 0) {
     // Load Stored Checkpoint Log
     Log *log = ReadLog(checkpoint_lsn);
@@ -317,7 +328,9 @@ Log *SystemManager::ReadLog(LSN lsn) {
   }
   Byte *raw_data = new Byte[lsn_size];
   disk_manager_.ReadRaw(log_data_fd_, raw_data, lsn_size, lsn_offset);
+  std::cerr << "< ----- 8 ----- >\n";
   Log *log = LogFactory::LoadLog(raw_data);
+  std::cerr << "< ----- 9 ----- >\n";
   delete[] raw_data;
   return log;
 }

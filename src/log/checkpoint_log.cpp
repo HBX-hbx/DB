@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-#include "tx/tx_manager.h"
+#include "../tx/tx_manager.h"
 
 namespace dbtrain {
 
@@ -10,10 +10,52 @@ CheckpointLog::CheckpointLog() : Log() {}
 CheckpointLog::CheckpointLog(LSN lsn) : Log(lsn) {}
 void CheckpointLog::Load(const Byte *src) {
   Log::Load(src);
+  size_t fsize = sizeof(LSN);
   LogManager &log_manager = LogManager::GetInstance();
-  // TODO: 加载MasterRecord对应的Checkpoint Log
+  // TODO: 加载 MasterRecord 对应的Checkpoint Log
   // TIPS: 利用读取的信息更新LogManager
   // LAB 2 BEGIN
+  // map size
+  size_t len_of_att = 0;
+  memcpy(&len_of_att, src + fsize, sizeof(size_t));
+  fsize += sizeof(size_t);
+  log_manager.att_.clear();
+  // map content
+  for (size_t i = 0; i < len_of_att; ++i) {
+    XID xid;
+    LSN lsn;
+    memcpy(&xid, src + fsize, sizeof(XID));
+    fsize += sizeof(XID);
+    memcpy(&lsn, src + fsize, sizeof(LSN));
+    fsize += sizeof(LSN);
+
+    log_manager.att_[xid] = lsn;
+  }
+  // map size
+  size_t len_of_dpt = 0;
+  memcpy(&len_of_dpt, src + fsize, sizeof(size_t));
+  fsize += sizeof(size_t);
+  log_manager.dpt_.clear();
+  // map content
+  for (size_t i = 0; i < len_of_dpt; ++i) {
+    UniquePageID upid;
+    LSN lsn;
+    // variable length string
+    size_t len_of_string = 0;
+    memcpy(&len_of_string, src + fsize, sizeof(size_t));
+    fsize += sizeof(size_t);
+    char* name = new char[len_of_string];
+    memcpy(name, src + fsize, len_of_string);
+    fsize += len_of_string;
+    upid.table_name.assign(name);
+
+    memcpy(&upid.page_id, src + fsize, sizeof(PageID));
+    fsize += sizeof(PageID);
+    memcpy(&lsn, src + fsize, sizeof(LSN));
+    fsize += sizeof(LSN);
+
+    log_manager.dpt_[upid] = lsn;
+  }
   // LAB 2 END
 }
 
@@ -24,6 +66,39 @@ size_t CheckpointLog::Store(Byte *dst) {
   // TIPS: 不添加缓存机制情况下，仅需要保存ATT和DPT
   // TIPS: 考虑缓存机制情况下，需要额外存储Flushed LSN
   // LAB 2 BEGIN
+  // map size
+  size_t len_of_att = log_manager.att_.size();
+  memcpy(dst + fsize, &len_of_att, sizeof(size_t));
+  fsize += sizeof(size_t);
+  // map content
+  for (auto pair: log_manager.att_) {
+    XID xid = pair.first;
+    LSN lsn = pair.second;
+    memcpy(dst + fsize, &xid, sizeof(XID));
+    fsize += sizeof(XID);
+    memcpy(dst + fsize, &lsn, sizeof(LSN));
+    fsize += sizeof(LSN);
+  }
+  // map size
+  size_t len_of_dpt = log_manager.dpt_.size();
+  memcpy(dst + fsize, &len_of_dpt, sizeof(size_t));
+  fsize += sizeof(size_t);
+  // map content
+  for (auto pair: log_manager.dpt_) {
+    UniquePageID upid = pair.first;
+    LSN lsn = pair.second;
+    // variable length string
+    size_t len_of_string = upid.table_name.size() + 1;
+    memcpy(dst + fsize, &len_of_string, sizeof(size_t));
+    fsize += sizeof(size_t);
+    memcpy(dst + fsize, upid.table_name.c_str(), len_of_string);
+    fsize += len_of_string;
+
+    memcpy(dst + fsize, &upid.page_id, sizeof(PageID));
+    fsize += sizeof(PageID);
+    memcpy(dst + fsize, &lsn, sizeof(LSN));
+    fsize += sizeof(LSN);
+  }
   // LAB 2 END
   return fsize;
 }

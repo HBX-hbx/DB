@@ -54,8 +54,8 @@ class LogManager {
   void WriteLog(Log *log);
   LSN AppendLog();
 
-  std::map<XID, LSN> att_;
-  std::map<UniquePageID, LSN> dpt_;
+  std::map<XID, LSN> att_;          // 事务表，记录事务 xid 最后所关联日志的 LSN
+  std::map<UniquePageID, LSN> dpt_; // 脏页表，记录某个页 PageId 最早是在 LSN 日志处修改的
 
   // TIPS: 仅需在设计Log缓存时使用
   // TIPS: 所有更新时间>FlushedLSN的页面不能被写回

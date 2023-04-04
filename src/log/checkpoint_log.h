@@ -1,7 +1,7 @@
 #ifndef DBTRAIN_CHECKPOINT_LOG_H
 #define DBTRAIN_CHECKPOINT_LOG_H
 
-#include "defines.h"
+#include "../defines.h"
 #include "log.h"
 #include "log_manager.h"
 

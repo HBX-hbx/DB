@@ -17,3 +17,5 @@ sql.tab.cpp
 *.patch
 clear.sh
 TODO.md
+
+clear.sh

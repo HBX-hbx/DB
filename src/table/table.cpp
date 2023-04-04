@@ -10,6 +10,7 @@
 #include "../result/result.h"
 #include "../table/hidden.h"
 #include "../tx/tx_manager.h"
+#include "defines.h"
 #include "page_handle.h"
 
 namespace dbtrain {
@@ -118,21 +119,10 @@ void Table::InsertRecord(Record *record) {
   // TIPS: 利用LogManager对应函数记录日志
   // TIPS: 需要在LAB 1之间添加代码
   // LAB 2 BEGIN
-  // LAB 2 END
-  XID xid = TxManager::GetInstance().Get(std::this_thread::get_id());
 
-  // TODO: 更改LAB 1,2代码，适应MVCC情景
-  // TIPS: 注意记录日志时需要设置新的隐藏列
-  // LAB 3 BEGIN
-  // LAB 3 END
-
-  // TODO: 寻找有空页面并插入记录
   // TIPS: 判断meta_.first_free_变量是否为NULL_PAGE
   // TIPS: 若为NULL_PAGE，则调用CreatePage()创建一个新的页面
   // TIPS: 若不为NULL_PAGE，则调用GetPage()获取meta_.first_free_页面
-  // TIPS: 调用page_handler的InsertRecord()方法插入记录
-  // TIPS: 若当前页面已满，则将meta_.first_free_设为下一个有空位的页面，同时将meta_modified设为true
-  // LAB 1 BEGIN
   std::cerr << "before meta.first_free: " << meta_.first_free_ << "\n";
   PageHandle page_handle;
   if (meta_.first_free_ == NULL_PAGE) {
@@ -140,6 +130,31 @@ void Table::InsertRecord(Record *record) {
   } else {
     page_handle = GetPage(meta_.first_free_);
   }
+
+  // TIPS: 通过bitmap_.FirstFree()获取第一个空槽
+  int free_slot = page_handle.bitmap_.FirstFree();
+  // TIPS: 使用RecordFactory::SetRid设置record的rid
+  Rid rid;
+  rid.page_no = page_handle.page_->GetPageId().page_no;
+  rid.slot_no = free_slot;
+  RecordFactory::SetRid(record, rid);
+
+  XID xid = TxManager::GetInstance().Get(std::this_thread::get_id());
+  LogManager &log_manager = LogManager::GetInstance();
+  RecordFactory record_factory(&meta_);
+  Byte* new_record_raw = new Byte[meta_.record_length_];
+  record_factory.StoreRecord(new_record_raw, record);
+  log_manager.InsertRecordLog(xid, table_name_, rid, meta_.record_length_, new_record_raw);
+  // LAB 2 END
+  // TODO: 更改LAB 1,2代码，适应MVCC情景
+  // TIPS: 注意记录日志时需要设置新的隐藏列
+  // LAB 3 BEGIN
+  // LAB 3 END
+
+  // TODO: 寻找有空页面并插入记录
+  // TIPS: 调用page_handler的InsertRecord()方法插入记录
+  // TIPS: 若当前页面已满，则将meta_.first_free_设为下一个有空位的页面，同时将meta_modified设为true
+  // LAB 1 BEGIN
   page_handle.InsertRecord(record);
   if (page_handle.Full()) {
     std::cerr << "------ full! ------\n";
@@ -156,8 +171,18 @@ void Table::DeleteRecord(const Rid &rid) {
   // TIPS: 注意ARIES使用的是WAL，所以需要先写入日志，再更新数据
   // TIPS: 利用LogManager对应函数记录日志
   // LAB 2 BEGIN
-  // LAB 2 END
+  PageHandle page_handle = GetPage(rid.page_no);
   XID xid = TxManager::GetInstance().Get(std::this_thread::get_id());
+  LogManager &log_manager = LogManager::GetInstance();
+
+  log_manager.DeleteRecordLog(
+    xid, 
+    table_name_, 
+    rid, 
+    meta_.record_length_, 
+    page_handle.GetRaw(rid.slot_no) 
+  );
+  // LAB 2 END
 
   // TODO: 更改LAB 1,2代码，适应MVCC情景
   // TIPS: 注意删除日志没有清除实际数据，页面不会由满变空
@@ -169,7 +194,7 @@ void Table::DeleteRecord(const Rid &rid) {
   // TIPS: 利用DeleteRecord删除对应SlotID的记录
   // TIPS: 注意更新Meta的first_free_信息
   // LAB 1 BEGIN
-  PageHandle page_handle = GetPage(rid.page_no);
+  
   page_handle.DeleteRecord(rid.slot_no);
   meta_.first_free_ = rid.page_no;
   // LAB 1 END
@@ -181,8 +206,23 @@ void Table::UpdateRecord(const Rid &rid, Record *record) {
   // TIPS: 注意ARIES使用的是WAL，所以需要先写入日志，再更新数据
   // TIPS: 利用LogManager对应函数记录日志
   // LAB 2 BEGIN
-  // LAB 2 END
+  PageHandle page_handle = GetPage(rid.page_no);
   XID xid = TxManager::GetInstance().Get(std::this_thread::get_id());
+  LogManager &log_manager = LogManager::GetInstance();
+  RecordFactory record_factory(&meta_);
+  Byte* new_record_raw = new Byte[meta_.record_length_];
+  record_factory.StoreRecord(new_record_raw, record);
+  
+  log_manager.UpdateRecordLog(
+    xid, 
+    table_name_, 
+    rid, 
+    meta_.record_length_, 
+    page_handle.GetRaw(rid.slot_no), 
+    meta_.record_length_,
+    new_record_raw
+  );
+  // LAB 2 END
 
   // TODO: 更改LAB 1,2代码，适应MVCC情景
   // TIPS: 注意更新过程与之前不同，需要采用删除旧数据并插入新数据的方法
@@ -194,7 +234,6 @@ void Table::UpdateRecord(const Rid &rid, Record *record) {
   // TIPS: 利用PageID查找对应的页面，通过PageHandle解析页面
   // TIPS: 利用UpdateRecord更新对应SlotID的记录为record
   // LAB 1 BEGIN
-  PageHandle page_handle = GetPage(rid.page_no);
   page_handle.UpdateRecord(rid.slot_no, record);
   // LAB 1 END
 }

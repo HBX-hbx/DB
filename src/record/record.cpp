@@ -31,7 +31,7 @@ size_t Record::GetSize() const { return field_list_.size(); }
 
 void Record::Display() const {
   for (Field *field : field_list_) {
-    std::cout << field->ToString() << " ";
+    std::cout << field->ToString() << "(" << field->GetSize() << ") ";
   }
   std::cout << std::endl;
 }

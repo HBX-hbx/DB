@@ -8,6 +8,7 @@
 #include "../storage/page.h"
 #include "../table/table_meta.h"
 #include "../utils/bitmap.h"
+#include "../log/update_log.h"
 
 namespace dbtrain {
 
@@ -19,6 +20,7 @@ struct PageHeader {
 
 class PageHandle {
   friend class Table;
+  friend class UpdateLog;
 
  public:
   PageHandle() = default;
