@@ -308,10 +308,10 @@ std::any Visitor::visit(UndoCrashHere *) {
 }
 
 std::any Visitor::visit(Checkpoint *) {
-  // LogManager::GetInstance().BeginCheckpoint();
-  // std::thread myThread(&LogManager::EndCheckpoint, &LogManager::GetInstance());
-  // myThread.detach();
-  LogManager::GetInstance().Checkpoint();
+  LogManager::GetInstance().BeginCheckpoint();
+  std::thread myThread(&LogManager::EndCheckpoint, &LogManager::GetInstance());
+  myThread.detach();
+  // LogManager::GetInstance().Checkpoint();
   return Result({"SUCCESS"});
 }
 
