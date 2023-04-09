@@ -50,6 +50,13 @@ class AbortLog : public TxLog {
   LogType GetType() const override;
 };
 
+class CrashHereLog : public TxLog {
+ public:
+  CrashHereLog() = default;
+  CrashHereLog(LSN lsn, LSN prev_lsn, XID xid);
+  LogType GetType() const override;
+};
+
 }  // namespace dbtrain
 
 #endif

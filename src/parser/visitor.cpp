@@ -4,6 +4,7 @@
 #include <thread>
 #include <unordered_map>
 
+#include "tx/tx_manager.h"
 #include "../exception/exceptions.h"
 #include "../exec/exec.h"
 #include "../oper/conditions/conditions.h"
@@ -300,7 +301,16 @@ std::any Visitor::visit(Crash *) {
   return Result({"CRASH"});
 }
 
+std::any Visitor::visit(UndoCrashHere *) {
+  XID xid = TxManager::GetInstance().Get(std::this_thread::get_id());
+  LogManager::GetInstance().UndoCrashHere(xid);
+  return Result({"UNDO CRASH HERE"});
+}
+
 std::any Visitor::visit(Checkpoint *) {
+  // LogManager::GetInstance().BeginCheckpoint();
+  // std::thread myThread(&LogManager::EndCheckpoint, &LogManager::GetInstance());
+  // myThread.detach();
   LogManager::GetInstance().Checkpoint();
   return Result({"SUCCESS"});
 }

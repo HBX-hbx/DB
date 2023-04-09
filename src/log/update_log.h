@@ -27,6 +27,23 @@ class UpdateLog : public TxLog {
   PhysiologicalImage log_image_;
 
   friend class LogFactory;
+  friend class CLRLog;
+};
+
+class CLRLog : public UpdateLog {
+ public:
+  CLRLog() = default;
+  CLRLog(LSN lsn, LSN prev_lsn, XID xid, LSN undo_next_lsn);
+  ~CLRLog() = default;
+
+  void Load(const Byte *src) override;
+  size_t Store(Byte *dst) override;
+
+  LogType GetType() const override;
+  size_t GetLength() const override;
+  LSN GetUndoNextLSN();
+ private:
+  LSN undo_next_lsn_;
 };
 
 }  // namespace dbtrain

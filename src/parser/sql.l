@@ -56,6 +56,7 @@ BEGIN           { return BEGIN_; }
 COMMIT          { return COMMIT; }
 ABORT           { return ABORT; }
 CRASH           { return CRASH; }
+UNDO_CRASH_HERE { return UNDO_CRASH_HERE; }
 FLUSH           { return FLUSH; }
 CHECKPOINT      { return CHECKPOINT; }
 ANALYZE         { return ANALYZE; }

@@ -2,6 +2,10 @@
 
 #include "../system/system_manager.h"
 #include "../record/record_factory.h"
+#include "defines.h"
+#include "log/log.h"
+#include "log/log_image.h"
+#include "log/log_manager.h"
 
 namespace dbtrain {
 
@@ -67,6 +71,24 @@ void UpdateLog::Undo() {
       assert(false);
     }
   }
+  PhysiologicalImage clr_log_image;
+  clr_log_image.table_name_ = log_image_.table_name_;
+  clr_log_image.page_id_    = log_image_.page_id_;
+  clr_log_image.slot_id_    = log_image_.slot_id_;
+  clr_log_image.new_len_    = log_image_.new_len_;
+  clr_log_image.old_len_    = log_image_.old_len_;
+  clr_log_image.op_type_    = log_image_.op_type_;
+  clr_log_image.new_val_ = new Byte[clr_log_image.new_len_];
+  clr_log_image.old_val_ = new Byte[clr_log_image.old_len_];
+  memcpy(clr_log_image.new_val_, log_image_.new_val_, log_image_.new_len_);
+  memcpy(clr_log_image.old_val_, log_image_.old_val_, log_image_.old_len_);
+  // 添加 CLR 日志，即 Undo 的 Redo 日志
+  
+  LogManager::GetInstance().CLR(
+    xid_, 
+    prev_lsn_, 
+    log_image_
+  );
   // LAB 2 END
 }
 
@@ -88,5 +110,29 @@ UniquePageID UpdateLog::GetUniPageID() const { return {log_image_.table_name_, l
 LogType UpdateLog::GetType() const { return LogType::UPDATE; }
 
 size_t UpdateLog::GetLength() const { return TxLog::GetLength() + log_image_.GetLength(); }
+
+void CLRLog::Load(const Byte *src) {
+  TxLog::Load(src);
+  auto src_ = src + 2 * sizeof(LSN) + sizeof(XID);
+  memcpy(&undo_next_lsn_, src_, sizeof(LSN));
+  src_ = src_ + sizeof(LSN);
+  log_image_.Load(src_);
+}
+
+size_t CLRLog::Store(Byte *dst) {
+  size_t length = TxLog::Store(dst);
+  memcpy(dst + length, &undo_next_lsn_, sizeof(LSN));
+  auto dst_ = dst + length + sizeof(LSN);
+  size_t img_length = log_image_.Store(dst_);
+  return length + sizeof(LSN) + img_length;
+}
+
+LogType CLRLog::GetType() const { return LogType::CLR; }
+
+size_t CLRLog::GetLength() const { return TxLog::GetLength() + sizeof(LSN) + log_image_.GetLength(); }
+
+LSN CLRLog::GetUndoNextLSN() { return undo_next_lsn_; }
+
+CLRLog::CLRLog(LSN lsn, LSN prev_lsn, XID xid, LSN undo_next_lsn) : UpdateLog(lsn, prev_lsn, xid), undo_next_lsn_(undo_next_lsn) {}
 
 }  // namespace dbtrain

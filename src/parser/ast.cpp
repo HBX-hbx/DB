@@ -33,6 +33,7 @@ std::any Begin::accept(Visitor *v) { return v->visit(this); }
 std::any Commit::accept(Visitor *v) { return v->visit(this); }
 std::any Abort::accept(Visitor *v) { return v->visit(this); }
 std::any Crash::accept(Visitor *v) { return v->visit(this); }
+std::any UndoCrashHere::accept(Visitor *v) { return v->visit(this); }
 std::any Checkpoint::accept(Visitor *v) { return v->visit(this); }
 std::any Flush::accept(Visitor *v) { return v->visit(this); }
 

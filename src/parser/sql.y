@@ -21,7 +21,7 @@ using namespace dbtrain::ast;
 %token IF NOT EXISTS
 %token SUM AVG MAX MIN COUNT
 %token BEGIN_ COMMIT ABORT
-%token CRASH CHECKPOINT FLUSH
+%token CRASH UNDO_CRASH_HERE CHECKPOINT FLUSH
 %token RUN DECLARE ENDDECL SIGNAL_ WAIT_
 %token T_EOF
 
@@ -110,6 +110,10 @@ stmt:
     |   CRASH
         {
             $$ = std::make_shared<Crash>();
+        }
+    |   UNDO_CRASH_HERE
+        {
+            $$ = std::make_shared<UndoCrashHere>();
         }
     |   CHECKPOINT
         {

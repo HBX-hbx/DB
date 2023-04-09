@@ -3,6 +3,7 @@
 
 #include "../defines.h"
 #include "log.h"
+#include "log/log_image.h"
 
 namespace dbtrain {
 
@@ -20,6 +21,7 @@ class LogFactory {
   static Log *NewDeleteLog(const TxInfo &info, const string &table_name, Rid rid, size_t old_len, const void *old_val);
   static Log *NewUpdateLog(const TxInfo &info, const string &table_name, Rid rid, size_t old_len, const void *old_val,
                            size_t new_len, const void *new_val);
+  static Log *NewCLRLog(const TxInfo &info, LSN undo_next_lsn, PhysiologicalImage& log_image);
 };
 
 }  // namespace dbtrain

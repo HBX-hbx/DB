@@ -18,6 +18,14 @@ class CheckpointLog : public Log {
   size_t GetLength() const override;
 };
 
+class BeginCheckpointLog : public Log {
+ public:
+  BeginCheckpointLog();
+  ~BeginCheckpointLog() = default;
+  BeginCheckpointLog(LSN lsn);
+  LogType GetType() const override;
+};
+
 }  // namespace dbtrain
 
 #endif

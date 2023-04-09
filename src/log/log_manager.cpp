@@ -2,12 +2,16 @@
 #include <climits>
 
 #include "log.h"
+#include "log/basic_log.h"
+#include "log/checkpoint_log.h"
 #include "log_factory.h"
 #include "logs.h"
 #include "../system/system_manager.h"
 #include "../tx/tx_manager.h"
 #include <cstddef>
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 namespace dbtrain {
 
@@ -44,6 +48,20 @@ void LogManager::Close() {
   current_lsn_ = INIT_LSN;
   att_.clear();
   dpt_.clear();
+}
+
+void LogManager::CLR(XID xid, LSN undo_next_lsn, PhysiologicalImage& log_image) {
+  LSN lsn = AppendLog();
+  LSN prev_lsn = att_[xid];
+  LogFactory::TxInfo info = {lsn, prev_lsn, xid};
+  Log* log = LogFactory::NewCLRLog(info, undo_next_lsn, log_image);
+  WriteLog(log);
+  att_[xid] = lsn;
+  // UniquePageID upid = {table_name, rid.page_no};
+  // if (dpt_.find(upid) == dpt_.end()) {
+  //   dpt_[upid] = lsn; // 找不到，说明是第一次修改该页面，添加到 dpt 中
+  // }
+  delete log;
 }
 
 void LogManager::Begin(XID xid) {
@@ -83,6 +101,18 @@ void LogManager::Abort(XID xid) {
   delete log;
 }
 
+void LogManager::BeginCheckpoint() {
+  LSN lsn = AppendLog();
+  Log *log = new BeginCheckpointLog(lsn);
+  WriteLog(log);
+  delete log;
+}
+
+void LogManager::EndCheckpoint() {
+  std::this_thread::sleep_for(std::chrono::milliseconds(50)); // sleep for 50ms
+  Checkpoint();
+}
+
 void LogManager::Checkpoint() {
   // 记录Checkpoint日志后更新MasterRecord
   LSN lsn = AppendLog();
@@ -90,6 +120,15 @@ void LogManager::Checkpoint() {
   WriteLog(log);
   delete log;
   SystemManager::GetInstance().StoreMasterRecord();
+}
+
+void LogManager::UndoCrashHere(XID xid) {
+  LSN lsn = AppendLog();
+  LSN prev_lsn = att_[xid];
+  Log *log = new CrashHereLog(lsn, prev_lsn, xid);
+  att_[xid] = lsn;
+  WriteLog(log);
+  delete log;
 }
 
 void LogManager::InsertRecordLog(XID xid, const string &table_name, Rid rid, size_t new_len, const void *new_val) {
@@ -100,7 +139,7 @@ void LogManager::InsertRecordLog(XID xid, const string &table_name, Rid rid, siz
   LSN lsn = AppendLog();
   LSN prev_lsn = att_[xid];
   LogFactory::TxInfo info = {lsn, prev_lsn, xid};
-  Log* log = LogFactory::NewInsertLog(info, table_name, rid, new_len, new_val); // TODO: 返回的 log 呢？有真正写进去吗？
+  Log* log = LogFactory::NewInsertLog(info, table_name, rid, new_len, new_val);
   WriteLog(log);
   delete log;
   att_[xid] = lsn;
@@ -185,14 +224,14 @@ void LogManager::Analyse(LSN checkpoint_lsn) {
       XID xid = commit_log->GetXID();
       assert(att_.find(xid) != att_.end());
       att_.erase(xid);
-    } else if (log->GetType() == LogType::UPDATE) {
+    } else if ((log->GetType() == LogType::UPDATE) || (log->GetType() == LogType::CLR)) {
       UpdateLog *update_log = dynamic_cast<UpdateLog *>(log);
       XID xid = update_log->GetXID();
       att_[xid] = log->GetLSN();
       // 更新DPT
       UniquePageID uid = update_log->GetUniPageID();
       if (dpt_.find(uid) == dpt_.end()) dpt_[uid] = log->GetLSN();
-    } else if ((log->GetType() == LogType::BEGIN) || (log->GetType() == LogType::ABORT)) {
+    } else if ((log->GetType() == LogType::BEGIN) || (log->GetType() == LogType::ABORT) || (log->GetType() == LogType::UNDO_CRASH_HERE) || (log->GetType() == LogType::BEGIN_CHECKPOINT)) {
       TxLog *tx_log = dynamic_cast<TxLog *>(log);
       XID xid = tx_log->GetXID();
       att_[xid] = log->GetLSN();
@@ -224,6 +263,7 @@ void LogManager::Redo() {
   Log *log = SystemManager::GetInstance().ReadLog(iter_lsn);
   while (log != nullptr) {
     assert(log->GetLSN() == iter_lsn);
+    std::cerr << "log lsn: "<< log->GetLSN() << ", type: " << (int)log->GetType() << "\n";
     if (log->GetType() == LogType::UPDATE) {
       UpdateLog *update_log = dynamic_cast<UpdateLog *>(log);
       // 查找 dpt，只有该 log 对应的 page 在 dpt 中，才有可能要 redo
@@ -241,10 +281,28 @@ void LogManager::Redo() {
           }
         }
       }
+    } else if (log->GetType() == LogType::CLR) {
+      CLRLog *clr_log = dynamic_cast<CLRLog *>(log);
+      // 查找 dpt，只有该 log 对应的 page 在 dpt 中，才有可能要 redo
+      UniquePageID uid = clr_log->GetUniPageID();
+      if (dpt_.find(uid) != dpt_.end()) {
+        LSN rec_lsn = dpt_[uid];
+        // 只有 iter_lsn >= rec_lsn，才有可能要 redo
+        if (iter_lsn >= rec_lsn) {
+          Table* table = SystemManager::GetInstance().GetTable(uid.table_name);
+          PageHandle page_handle = table->GetPage(uid.page_id);
+          // 只有 iter_lsn > page_lsn，才需要 redo
+          if (iter_lsn > page_handle.GetLSN()) {
+            // redo!
+            clr_log->Redo();
+          }
+        }
+      }
     }
     delete log;
     ++iter_lsn;
     if (iter_lsn == checkpoint_lsn_) { // 跳过 checkpoint_lsn
+      std::cerr << "log lsn: "<< checkpoint_lsn_ << ", type: " << (int)LogType::CHECKPOINT << "\n";
       ++iter_lsn;
     }
     log = SystemManager::GetInstance().ReadLog(iter_lsn);
@@ -256,13 +314,13 @@ void LogManager::Redo() {
 void LogManager::Undo() {
   // 在目前实现方法下，所有处于ATT中的事务都为正在运行状态
   // Undo过程需要回滚所有的ATT表中事务
-  std::cerr << "att_size: " << att_.size() << "\n";
+  // std::cerr << "att_size: " << att_.size() << "\n";
   for (const auto &att_pair : att_) {
-    std::cerr << "in the loop\n";
+    // std::cerr << "in the loop\n";
     Undo(att_pair.first);
     // 清除ATT表对应项
   }
-  std::cerr << "ending: " << att_.size() << "\n";
+  // std::cerr << "ending: " << att_.size() << "\n";
   att_.clear();
 }
 
@@ -278,11 +336,19 @@ bool LogManager::Undo(XID xid) {
   std::cerr << "undoing xid: " << xid << "\n";
   LSN last_lsn = att_[xid];
   Log *log = SystemManager::GetInstance().ReadLog(last_lsn);
+  if (log->GetType() == LogType::CLR) {
+    CLRLog *clr_log = dynamic_cast<CLRLog *>(log);
+    last_lsn = clr_log->GetUndoNextLSN() - 1;
+    log = SystemManager::GetInstance().ReadLog(last_lsn);
+  }
   // std::cerr << " < ----- begining loop\n";
   while(log != nullptr) {
     if (log->GetType() == LogType::UPDATE) {
       UpdateLog *update_log = dynamic_cast<UpdateLog *>(log);
       update_log->Undo();
+    } else if (log->GetType() == LogType::UNDO_CRASH_HERE) {
+      SystemManager::GetInstance().Crash();
+      return false;
     }
     TxLog *tx_log = dynamic_cast<TxLog *>(log);
     LSN prev_lsn = tx_log->GetPrevLSN();

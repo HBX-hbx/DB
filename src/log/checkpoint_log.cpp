@@ -3,6 +3,7 @@
 #include <cassert>
 
 #include "../tx/tx_manager.h"
+#include "log/log.h"
 
 namespace dbtrain {
 
@@ -115,5 +116,10 @@ size_t CheckpointLog::GetLength() const {
   }
   return length;
 }
+
+BeginCheckpointLog::BeginCheckpointLog() : Log() {}
+BeginCheckpointLog::BeginCheckpointLog(LSN lsn) : Log(lsn) {}
+
+LogType BeginCheckpointLog::GetType() const { return LogType::BEGIN_CHECKPOINT; }
 
 }  // namespace dbtrain

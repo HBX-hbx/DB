@@ -21,6 +21,7 @@ XID TxManager::Push(TID tid) {
 }
 
 XID TxManager::Pop(TID tid) {
+
   tx_lock_.lock();
   XID xid = tx_map_[tid];
   tx_map_.erase(tid);

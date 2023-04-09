@@ -19,7 +19,7 @@ PageHandle::PageHandle(Page *page, const TableMeta &meta)
 }
 
 void PageHandle::InsertRecord(Record *record) {
-  std::cerr << "< ----------------- PageHandle::InsertRecord ---------------- >\n";
+  // std::cerr << "< ----------------- PageHandle::InsertRecord ---------------- >\n";
   // 获取排它锁
   LockManager &lock_manager = LockManager::GetInstance();
   lock_manager.Lock("Page" + std::to_string(page_->GetPageId().page_no));
@@ -43,7 +43,7 @@ void PageHandle::InsertRecord(Record *record) {
   // bitmap_.Display();
   // TIPS: 将page_标记为dirty
   page_->SetDirty();
-  std::cerr << "free_slot: " << free_slot << "\n";
+  // std::cerr << "free_slot: " << free_slot << "\n";
   // LAB 1 END
   // LAB 2: 设置页面LSN
   SetLSN(LogManager::GetInstance().GetCurrent());
@@ -52,7 +52,7 @@ void PageHandle::InsertRecord(Record *record) {
 }
 
 void PageHandle::DeleteRecord(SlotID slot_no) {
-  std::cerr << "< ----------------- PageHandle::DeleteRecord ---------------- >\n";
+  // std::cerr << "< ----------------- PageHandle::DeleteRecord ---------------- >\n";
   // 获取排他锁
   LockManager &lock_manager = LockManager::GetInstance();
   lock_manager.Lock("Page" + std::to_string(page_->GetPageId().page_no));
@@ -72,7 +72,7 @@ void PageHandle::DeleteRecord(SlotID slot_no) {
 }
 
 void PageHandle::UpdateRecord(SlotID slot_no, Record *record) {
-  std::cerr << "< ----------------- PageHandle::UpdateRecord ---------------- >\n";
+  // std::cerr << "< ----------------- PageHandle::UpdateRecord ---------------- >\n";
   // 获取排他锁
   LockManager &lock_manager = LockManager::GetInstance();
   lock_manager.Lock("Page" + std::to_string(page_->GetPageId().page_no));

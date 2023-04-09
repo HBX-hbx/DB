@@ -44,6 +44,7 @@ class Visitor {
   virtual std::any visit(Abort *);
 
   virtual std::any visit(Crash *);
+  virtual std::any visit(UndoCrashHere *);
   virtual std::any visit(Checkpoint *);
   virtual std::any visit(Flush *);
 

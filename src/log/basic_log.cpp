@@ -22,10 +22,12 @@ BeginLog::BeginLog(LSN lsn, LSN prev_lsn, XID xid) : TxLog(lsn, prev_lsn, xid) {
 EndLog::EndLog(LSN lsn, LSN prev_lsn, XID xid) : TxLog(lsn, prev_lsn, xid) {}
 CommitLog::CommitLog(LSN lsn, LSN prev_lsn, XID xid) : TxLog(lsn, prev_lsn, xid) {}
 AbortLog::AbortLog(LSN lsn, LSN prev_lsn, XID xid) : TxLog(lsn, prev_lsn, xid) {}
+CrashHereLog::CrashHereLog(LSN lsn, LSN prev_lsn, XID xid) : TxLog(lsn, prev_lsn, xid) {}
 
 LogType BeginLog::GetType() const { return LogType::BEGIN; }
 LogType EndLog::GetType() const { return LogType::END; }
 LogType CommitLog::GetType() const { return LogType::COMMIT; }
 LogType AbortLog::GetType() const { return LogType::ABORT; }
+LogType CrashHereLog::GetType() const { return LogType::UNDO_CRASH_HERE; }
 
 }  // namespace dbtrain

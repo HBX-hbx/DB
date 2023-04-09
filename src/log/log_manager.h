@@ -6,6 +6,7 @@
 
 #include "../defines.h"
 #include "log.h"
+#include "log/log_image.h"
 
 namespace dbtrain {
 
@@ -28,10 +29,14 @@ class LogManager {
   LogManager(const LogManager &) = delete;
   void operator=(const LogManager &) = delete;
 
+  void CLR(XID xid, LSN undo_next_lsn, PhysiologicalImage& log_image);
   void Begin(XID xid);
   void Commit(XID xid);
   void Abort(XID xid);
   void Checkpoint();
+  void BeginCheckpoint();
+  void EndCheckpoint();
+  void UndoCrashHere(XID xid);
 
   void InsertRecordLog(XID xid, const string &table_name, Rid rid, size_t new_len, const void *new_val);
   void DeleteRecordLog(XID xid, const string &table_name, Rid rid, size_t old_len, const void *old_val);

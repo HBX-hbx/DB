@@ -99,7 +99,7 @@ PageHandle Table::GetPage(PageID page_id) {
 }
 
 void Table::InsertRecord(Record *record) {
-  std::cerr << "< ---------------- Table::InsertRecord --------------- >\n";
+  // std::cerr << "< ---------------- Table::InsertRecord --------------- >\n";
   if (record->GetSize() != meta_.cols_.size()) {
     throw InvalidInsertCountError(record->GetSize(), meta_.cols_.size());
   }
@@ -123,7 +123,7 @@ void Table::InsertRecord(Record *record) {
   // TIPS: 判断meta_.first_free_变量是否为NULL_PAGE
   // TIPS: 若为NULL_PAGE，则调用CreatePage()创建一个新的页面
   // TIPS: 若不为NULL_PAGE，则调用GetPage()获取meta_.first_free_页面
-  std::cerr << "before meta.first_free: " << meta_.first_free_ << "\n";
+  // std::cerr << "before meta.first_free: " << meta_.first_free_ << "\n";
   PageHandle page_handle;
   if (meta_.first_free_ == NULL_PAGE) {
     page_handle = CreatePage();
@@ -157,16 +157,16 @@ void Table::InsertRecord(Record *record) {
   // LAB 1 BEGIN
   page_handle.InsertRecord(record);
   if (page_handle.Full()) {
-    std::cerr << "------ full! ------\n";
+    // std::cerr << "------ full! ------\n";
     meta_.first_free_ = page_handle.GetNextFree();
     meta_modified = true;
   }
-  std::cerr << "after meta.first_free: " << meta_.first_free_ << "\n";
+  // std::cerr << "after meta.first_free: " << meta_.first_free_ << "\n";
   // LAB 1 END
 }
 
 void Table::DeleteRecord(const Rid &rid) {
-  std::cerr << "< ---------------- Table::DeleteRecord --------------- >\n";
+  // std::cerr << "< ---------------- Table::DeleteRecord --------------- >\n";
   // TODO: 添加数据删除日志信息
   // TIPS: 注意ARIES使用的是WAL，所以需要先写入日志，再更新数据
   // TIPS: 利用LogManager对应函数记录日志
@@ -201,7 +201,7 @@ void Table::DeleteRecord(const Rid &rid) {
 }
 
 void Table::UpdateRecord(const Rid &rid, Record *record) {
-  std::cerr << "< ---------------- Table::UpdateRecord --------------- >\n";
+  // std::cerr << "< ---------------- Table::UpdateRecord --------------- >\n";
   // TODO: 添加数据更新日志信息
   // TIPS: 注意ARIES使用的是WAL，所以需要先写入日志，再更新数据
   // TIPS: 利用LogManager对应函数记录日志
