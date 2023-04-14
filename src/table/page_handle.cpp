@@ -175,7 +175,7 @@ RecordList PageHandle::LoadRecords(XID xid, const std::set<XID> &uncommit_xids) 
   while ((slot_no = bitmap_.NextNotFree(slot_no)) != -1) {
     Record *record = record_factory.LoadRecord(slots_ + slot_no * record_length_);
     // TODO: MVCC情况下的数据读取
-    // TIPS: 注意MVCC在数据读取过程中存在无效数据（未提交的删除以及未开始的插入），注意去除
+    // TIPS: 注意MVCC在数据读取过程中存在无效数据（已提交的删除以及未提交的插入），注意去除
     // LAB 3 BEGIN
     // LAB 3 END
     record_vector.push_back(record);
