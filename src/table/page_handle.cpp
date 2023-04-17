@@ -206,7 +206,7 @@ RecordList PageHandle::LoadRecords(XID xid, const std::set<XID> &uncommit_xids) 
     std::cerr << "< ----------------- finding one slot not free ---------------- >\n";
     std::cerr << "free_slot: " << slot_no << "\n";
     // TODO: MVCC情况下的数据读取
-    // TIPS: 注意MVCC在数据读取过程中存在无效数据（未提交的删除以及未开始的插入），注意去除
+    // TIPS: 注意MVCC在数据读取过程中存在无效数据（已提交的删除以及未提交的插入），注意去除
     // LAB 3 BEGIN
     // LAB 3 END
     record_vector.push_back(record);

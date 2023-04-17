@@ -62,7 +62,7 @@ Result SystemManager::UseDatabase(const std::string &db_name) {
     }
     std::cerr << "< ----- 2 ----- >\n";
     if (!using_db_.empty()) {
-      CloseDatabase(db_name);
+      CloseDatabase(using_db_);
     }
     std::cerr << "< ----- 3 ----- >\n";
     if (using_db_.empty()) {

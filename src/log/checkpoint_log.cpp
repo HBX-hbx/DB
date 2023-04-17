@@ -12,7 +12,10 @@ void CheckpointLog::Load(const Byte *src) {
   Log::Load(src);
   size_t fsize = sizeof(LSN);
   LogManager &log_manager = LogManager::GetInstance();
-  // TODO: 加载 MasterRecord 对应的Checkpoint Log
+  // TODO: 恢复当前事务编号
+  // LAB 3 BEGIN
+  // LAB 3 END
+  // TODO: 加载MasterRecord对应的Checkpoint Log
   // TIPS: 利用读取的信息更新LogManager
   // LAB 2 BEGIN
   // map size
@@ -62,6 +65,9 @@ void CheckpointLog::Load(const Byte *src) {
 size_t CheckpointLog::Store(Byte *dst) {
   LogManager &log_manager = LogManager::GetInstance();
   size_t fsize = Log::Store(dst);
+  // TODO: 存储当前事务编号
+  // LAB 3 BEGIN
+  // LAB 3 END
   // TODO: 存储LogManager相关信息，返回Store的数据长度
   // TIPS: 不添加缓存机制情况下，仅需要保存ATT和DPT
   // TIPS: 考虑缓存机制情况下，需要额外存储Flushed LSN
