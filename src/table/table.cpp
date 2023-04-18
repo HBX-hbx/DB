@@ -142,6 +142,7 @@ void Table::InsertRecord(Record *record) {
   XID xid = TxManager::GetInstance().Get(std::this_thread::get_id());
   LogManager &log_manager = LogManager::GetInstance();
   RecordFactory record_factory(&meta_);
+  RecordFactory::SetCreateXid(record, xid);
   Byte* new_record_raw = new Byte[meta_.record_length_];
   record_factory.StoreRecord(new_record_raw, record);
   log_manager.InsertRecordLog(xid, table_name_, rid, meta_.record_length_, new_record_raw);
@@ -149,19 +150,25 @@ void Table::InsertRecord(Record *record) {
   // TODO: 更改LAB 1,2代码，适应MVCC情景
   // TIPS: 注意记录日志时需要设置新的隐藏列
   // LAB 3 BEGIN
+  page_handle.InsertRecord(record, xid);
+  if (page_handle.Full()) {
+    std::cerr << "------ full! ------\n";
+    meta_.first_free_ = page_handle.GetNextFree();
+    meta_modified = true;
+  }
   // LAB 3 END
 
   // TODO: 寻找有空页面并插入记录
   // TIPS: 调用page_handler的InsertRecord()方法插入记录
   // TIPS: 若当前页面已满，则将meta_.first_free_设为下一个有空位的页面，同时将meta_modified设为true
   // LAB 1 BEGIN
-  page_handle.InsertRecord(record);
-  if (page_handle.Full()) {
-    std::cerr << "------ full! ------\n";
-    meta_.first_free_ = page_handle.GetNextFree();
-    meta_modified = true;
-  }
-  std::cerr << "after meta.first_free: " << meta_.first_free_ << "\n";
+  // page_handle.InsertRecord(record);
+  // if (page_handle.Full()) {
+  //   std::cerr << "------ full! ------\n";
+  //   meta_.first_free_ = page_handle.GetNextFree();
+  //   meta_modified = true;
+  // }
+  // std::cerr << "after meta.first_free: " << meta_.first_free_ << "\n";
   // LAB 1 END
 }
 
@@ -187,6 +194,8 @@ void Table::DeleteRecord(const Rid &rid) {
   // TODO: 更改LAB 1,2代码，适应MVCC情景
   // TIPS: 注意删除日志没有清除实际数据，页面不会由满变空
   // LAB 3 BEGIN
+  page_handle.DeleteRecord(rid.slot_no, xid, true);
+  // meta_.first_free_ = rid.page_no;
   // LAB 3 END
 
   // TODO: 删除RID对应的记录
@@ -195,8 +204,8 @@ void Table::DeleteRecord(const Rid &rid) {
   // TIPS: 注意更新Meta的first_free_信息
   // LAB 1 BEGIN
   
-  page_handle.DeleteRecord(rid.slot_no);
-  meta_.first_free_ = rid.page_no;
+  // page_handle.DeleteRecord(rid.slot_no);
+  // meta_.first_free_ = rid.page_no;
   // LAB 1 END
 }
 
@@ -206,35 +215,59 @@ void Table::UpdateRecord(const Rid &rid, Record *record) {
   // TIPS: 注意ARIES使用的是WAL，所以需要先写入日志，再更新数据
   // TIPS: 利用LogManager对应函数记录日志
   // LAB 2 BEGIN
-  PageHandle page_handle = GetPage(rid.page_no);
-  XID xid = TxManager::GetInstance().Get(std::this_thread::get_id());
-  LogManager &log_manager = LogManager::GetInstance();
-  RecordFactory record_factory(&meta_);
-  Byte* new_record_raw = new Byte[meta_.record_length_];
-  record_factory.StoreRecord(new_record_raw, record);
+  // PageHandle page_handle = GetPage(rid.page_no);
+  // XID xid = TxManager::GetInstance().Get(std::this_thread::get_id());
+  // LogManager &log_manager = LogManager::GetInstance();
+  // RecordFactory record_factory(&meta_);
+  // Byte* new_record_raw = new Byte[meta_.record_length_];
+  // record_factory.StoreRecord(new_record_raw, record);
+
+  // log_manager.DeleteRecordLog(
+  //   xid, 
+  //   table_name_, 
+  //   rid, 
+  //   meta_.record_length_, 
+  //   page_handle.GetRaw(rid.slot_no) 
+  // );
+
+  // int free_slot = page_handle.bitmap_.FirstFree();
+  // Rid new_rid;
+  // new_rid.page_no = page_handle.page_->GetPageId().page_no;
+  // new_rid.slot_no = free_slot;
+  // RecordFactory::SetRid(record, new_rid);
+
+  // log_manager.InsertRecordLog(xid, table_name_, new_rid, meta_.record_length_, new_record_raw);
   
-  log_manager.UpdateRecordLog(
-    xid, 
-    table_name_, 
-    rid, 
-    meta_.record_length_, 
-    page_handle.GetRaw(rid.slot_no), 
-    meta_.record_length_,
-    new_record_raw
-  );
+  // log_manager.UpdateRecordLog(
+  //   xid, 
+  //   table_name_, 
+  //   rid, 
+  //   meta_.record_length_, 
+  //   page_handle.GetRaw(rid.slot_no), 
+  //   meta_.record_length_,
+  //   new_record_raw
+  // );
   // LAB 2 END
 
   // TODO: 更改LAB 1,2代码，适应MVCC情景
   // TIPS: 注意更新过程与之前不同，需要采用删除旧数据并插入新数据的方法
   // TIPS: 可以调用DeleteRecord和InsertRecord的接口
   // LAB 3 BEGIN
+  DeleteRecord(rid);
+  // meta_.first_free_ = rid.page_no;
+  InsertRecord(record);
+  // if (page_handle.Full()) {
+  //   std::cerr << "------ full! ------\n";
+  //   meta_.first_free_ = page_handle.GetNextFree();
+  //   meta_modified = true;
+  // }
   // LAB 3 END
 
   // TODO: 更新记录
   // TIPS: 利用PageID查找对应的页面，通过PageHandle解析页面
   // TIPS: 利用UpdateRecord更新对应SlotID的记录为record
   // LAB 1 BEGIN
-  page_handle.UpdateRecord(rid.slot_no, record);
+  // page_handle.UpdateRecord(rid.slot_no, record);
   // LAB 1 END
 }
 

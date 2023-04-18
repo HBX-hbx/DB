@@ -25,13 +25,6 @@ void PageHandle::InsertRecord(Record *record) {
   lock_manager.Lock("Page" + std::to_string(page_->GetPageId().page_no));
   // TODO: 插入记录
   // LAB 1 BEGIN
-  // // TIPS: 通过bitmap_.FirstFree()获取第一个空槽
-  // int free_slot = bitmap_.FirstFree();
-  // // TIPS: 使用RecordFactory::SetRid设置record的rid
-  // Rid rid;
-  // rid.page_no = page_->GetPageId().page_no;
-  // rid.slot_no = free_slot;
-  // RecordFactory::SetRid(record, rid);
   Rid rid = RecordFactory::GetRid(record);
   int free_slot = rid.slot_no;
   // TIPS: 使用RecordFactory的StoreRecord方法将record序列化到页面中
@@ -43,7 +36,6 @@ void PageHandle::InsertRecord(Record *record) {
   // bitmap_.Display();
   // TIPS: 将page_标记为dirty
   page_->SetDirty();
-  std::cerr << "free_slot: " << free_slot << "\n";
   // LAB 1 END
   // LAB 2: 设置页面LSN
   SetLSN(LogManager::GetInstance().GetCurrent());
@@ -179,6 +171,28 @@ void PageHandle::InsertRecord(Record *record, XID xid) {
   // TIPS: 注意需要利用锁保证页面仅能同时被单个线程修改
   // TIPS: 注意MVCC需要设置版本号，版本号可以用事务号表示
   // LAB 3 BEGIN
+  // 获取排他锁
+  LockManager &lock_manager = LockManager::GetInstance();
+  lock_manager.Lock("Page" + std::to_string(page_->GetPageId().page_no));
+
+  Rid rid = RecordFactory::GetRid(record);
+  
+  int free_slot = rid.slot_no;
+  // TIPS: 使用RecordFactory的StoreRecord方法将record序列化到页面中
+  RecordFactory record_factory(&meta_);
+  // bitmap_.Display();
+  record_factory.StoreRecord(slots_ + free_slot * record_length_, record);
+  // TIPS: 将bitmap_的第一个空槽标记为已使用
+  bitmap_.Set(free_slot);
+  // bitmap_.Display();
+  // TIPS: 将page_标记为dirty
+  page_->SetDirty();
+  // LAB 1 END
+  // LAB 2: 设置页面LSN
+  SetLSN(LogManager::GetInstance().GetCurrent());
+
+  // 释放排他锁
+  lock_manager.Unlock("Page" + std::to_string(page_->GetPageId().page_no));
   // LAB 3 END
 }
 
@@ -187,11 +201,25 @@ void PageHandle::DeleteRecord(SlotID slot_no, XID xid, bool) {
   // TIPS: 注意需要利用锁保证页面仅能同时被单个线程修改
   // TIPS: 注意MVCC删除不能直接清除数据，只是设置对应记录失效
   // LAB 3 BEGIN
+  // 获取排他锁
+  LockManager &lock_manager = LockManager::GetInstance();
+  lock_manager.Lock("Page" + std::to_string(page_->GetPageId().page_no));
+  // bitmap_.Reset(slot_no);
+
+  RecordFactory record_factory(&meta_);
+  Record *record = record_factory.LoadRecord(slots_ + slot_no * record_length_);
+  RecordFactory::SetDeleteXid(record, xid);
+  record_factory.StoreRecord(slots_ + slot_no * record_length_, record);
+
+  page_->SetDirty();
+  SetLSN(LogManager::GetInstance().GetCurrent());
+  // 释放排他锁
+  lock_manager.Unlock("Page" + std::to_string(page_->GetPageId().page_no));
   // LAB 3 END
 }
 
 RecordList PageHandle::LoadRecords(XID xid, const std::set<XID> &uncommit_xids) {
-  std::cerr << "< ----------------- PageHandle::LoadRecords ---------------- >\n";
+  std::cerr << "< ----------------- PageHandle::LoadRecords MVCC ---------------- >\n";
   // 获取共享锁
   LockManager &lock_manager = LockManager::GetInstance();
   lock_manager.LockShared("Page" + std::to_string(page_->GetPageId().page_no));
@@ -203,11 +231,33 @@ RecordList PageHandle::LoadRecords(XID xid, const std::set<XID> &uncommit_xids) 
   RecordFactory record_factory(&meta_);
   while ((slot_no = bitmap_.NextNotFree(slot_no)) != -1) {
     Record *record = record_factory.LoadRecord(slots_ + slot_no * record_length_);
-    std::cerr << "< ----------------- finding one slot not free ---------------- >\n";
-    std::cerr << "free_slot: " << slot_no << "\n";
     // TODO: MVCC情况下的数据读取
     // TIPS: 注意MVCC在数据读取过程中存在无效数据（已提交的删除以及未提交的插入），注意去除
     // LAB 3 BEGIN
+    // 创建版本号 & 删除版本号，若未设置则为 0
+    XID create_xid = RecordFactory::GetCreateXid(record);
+    XID delete_xid = RecordFactory::GetDeleteXid(record);
+
+    if (create_xid < delete_xid) { // 已删除
+      if (xid < delete_xid) { // 后事务删除，需要包含在内
+
+      } else { //之前已经删除，看是否已提交
+        if (uncommit_xids.find(delete_xid) == uncommit_xids.end()) { // 已经提交，去除
+          continue;
+        }
+      }
+    } else if (create_xid > delete_xid) { // 新插入
+      if (xid < create_xid) { // 后事务插入，需要去除
+        continue;
+      } else { //之前已经插入，看是否已提交
+        if (uncommit_xids.find(create_xid) != uncommit_xids.end()) { // 未提交，去除
+          continue;
+        }
+      }
+    } else {
+      continue;
+    }
+
     // LAB 3 END
     record_vector.push_back(record);
   }

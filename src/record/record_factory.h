@@ -28,6 +28,10 @@ class RecordFactory {
 
   // TODO: 设置MVCC的相关隐藏列
   // LAB 3 BEGIN
+  static XID GetCreateXid(Record *record);
+  static XID GetDeleteXid(Record *record);
+  static void SetCreateXid(Record *record, XID create_xid);
+  static void SetDeleteXid(Record *record, XID delete_xid);
   // LAB 3 END
 
  private:

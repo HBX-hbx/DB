@@ -3,6 +3,7 @@
 #include <iostream>
 #include "../exception/exceptions.h"
 #include "../exception/record_exceptions.h"
+#include "defines.h"
 #include "field.h"
 #include "fields.h"
 #include "../table/hidden.h"
@@ -127,6 +128,29 @@ void RecordFactory::SetRid(Record *record, Rid rid) {
 // TODO: 设置MVCC相关隐藏列的接口
 // TIPS: 基础功能仅需要设置创建版本号和删除版本号
 // LAB 3 BEGIN
+XID RecordFactory::GetCreateXid(Record *record) {
+  // 读取隐藏列的 Create Xid 信息
+  XID create_xid = dynamic_cast<IntField *>(record->field_list_[record->GetSize() - CREATE_XID_OFFSET])->GetValue();
+  return create_xid;
+}
+
+void RecordFactory::SetCreateXid(Record *record, XID create_xid) {
+  // 设置隐藏列的 Create Xid 信息
+  Field *create_xid_field = new IntField(create_xid);
+  record->SetField(record->GetSize() - CREATE_XID_OFFSET, create_xid_field);
+}
+
+XID RecordFactory::GetDeleteXid(Record *record) {
+  // 读取隐藏列的 Delete Xid 信息
+  XID delete_xid = dynamic_cast<IntField *>(record->field_list_[record->GetSize() - DELETE_XID_OFFSET])->GetValue();
+  return delete_xid;
+}
+
+void RecordFactory::SetDeleteXid(Record *record, XID delete_xid) {
+  // 设置隐藏列的 Delete Xid 信息
+  Field *delete_xid_field = new IntField(delete_xid);
+  record->SetField(record->GetSize() - DELETE_XID_OFFSET, delete_xid_field);
+}
 // LAB 3 END
 
 }  // namespace dbtrain

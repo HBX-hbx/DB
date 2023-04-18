@@ -3,6 +3,7 @@
 #include <cassert>
 
 #include "../tx/tx_manager.h"
+#include "defines.h"
 
 namespace dbtrain {
 
@@ -14,6 +15,10 @@ void CheckpointLog::Load(const Byte *src) {
   LogManager &log_manager = LogManager::GetInstance();
   // TODO: 恢复当前事务编号
   // LAB 3 BEGIN
+  XID xid;
+  memcpy(&xid, src + fsize, sizeof(XID));
+  fsize += sizeof(XID);
+  TxManager::GetInstance().SetXID(xid);
   // LAB 3 END
   // TODO: 加载MasterRecord对应的Checkpoint Log
   // TIPS: 利用读取的信息更新LogManager
@@ -67,6 +72,9 @@ size_t CheckpointLog::Store(Byte *dst) {
   size_t fsize = Log::Store(dst);
   // TODO: 存储当前事务编号
   // LAB 3 BEGIN
+  XID xid = TxManager::GetInstance().GetXID();
+  memcpy(dst + fsize, &xid, sizeof(XID));
+  fsize += sizeof(XID);
   // LAB 3 END
   // TODO: 存储LogManager相关信息，返回Store的数据长度
   // TIPS: 不添加缓存机制情况下，仅需要保存ATT和DPT

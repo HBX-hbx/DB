@@ -100,7 +100,7 @@ void LogManager::InsertRecordLog(XID xid, const string &table_name, Rid rid, siz
   LSN lsn = AppendLog();
   LSN prev_lsn = att_[xid];
   LogFactory::TxInfo info = {lsn, prev_lsn, xid};
-  Log* log = LogFactory::NewInsertLog(info, table_name, rid, new_len, new_val); // TODO: 返回的 log 呢？有真正写进去吗？
+  Log* log = LogFactory::NewInsertLog(info, table_name, rid, new_len, new_val);
   WriteLog(log);
   delete log;
   att_[xid] = lsn;
