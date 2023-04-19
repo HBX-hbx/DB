@@ -47,6 +47,8 @@ class PageHandle {
   void DeleteRecord(SlotID, XID xid, bool);
   RecordList LoadRecords(XID xid, const std::set<XID> &uncommit_xids);
 
+  void GC();
+
   Rid Next();
 
   bool Full();

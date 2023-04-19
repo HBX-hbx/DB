@@ -153,8 +153,9 @@ void Table::InsertRecord(Record *record) {
   page_handle.InsertRecord(record, xid);
   if (page_handle.Full()) {
     std::cerr << "------ full! ------\n";
-    meta_.first_free_ = page_handle.GetNextFree();
+    meta_.first_free_ = GetFirstFree();
     meta_modified = true;
+
   }
   // LAB 3 END
 
@@ -170,6 +171,20 @@ void Table::InsertRecord(Record *record) {
   // }
   // std::cerr << "after meta.first_free: " << meta_.first_free_ << "\n";
   // LAB 1 END
+}
+
+PageID Table::GetFirstFree() {
+  PageID cur_page = 0;
+  PageID end_page = meta_.GetTableEnd();
+  // 遍历每一页进行查找
+  while (cur_page < end_page) {
+    PageHandle page_handle = GetPage(cur_page);
+    if(!page_handle.Full()) {
+      return cur_page;
+    }
+    cur_page++;
+  }
+  return NULL_PAGE;
 }
 
 void Table::DeleteRecord(const Rid &rid) {
@@ -269,6 +284,17 @@ void Table::UpdateRecord(const Rid &rid, Record *record) {
   // LAB 1 BEGIN
   // page_handle.UpdateRecord(rid.slot_no, record);
   // LAB 1 END
+}
+
+void Table::GC() {
+  PageID cur_page = 0;
+  PageID end_page = meta_.GetTableEnd();
+  // 遍历每一页进行 GC
+  while (cur_page < end_page) {
+    PageHandle page_handle = GetPage(cur_page);
+    page_handle.GC();
+    cur_page++;
+  }
 }
 
 int Table::GetColumnSize() const { return meta_.GetSize(); }

@@ -35,6 +35,9 @@ class Table {
   int GetColumnIdx(string col_name) const;
   int GetColumnSize() const;
 
+  void GC();
+  PageID GetFirstFree();
+
  public:
   PageHandle CreatePage();
   PageHandle GetPage(PageID page_id);

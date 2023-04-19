@@ -11,6 +11,8 @@
 #include "../record/fields.h"
 #include "../record/record_factory.h"
 #include "../table/hidden.h"
+#include "record/record.h"
+#include "table/page_handle.h"
 
 namespace dbtrain {
 
@@ -121,6 +123,7 @@ void SystemManager::CloseDatabase() {
 void SystemManager::CloseDatabase(const std::string &db_name) {
   // LAB 2: 日志写回
   StoreLogManager();
+  GC();
 
   // 清除缓存
   for (const auto &table : tables_) {
@@ -136,6 +139,14 @@ void SystemManager::CloseDatabase(const std::string &db_name) {
   }
   disk_manager_.CloseFile(log_data_fd_);
   disk_manager_.CloseFile(log_index_fd_);
+}
+
+void SystemManager::GC() {
+  // 遍历每一个 table，进行 GC
+  for (const auto &table_pair : tables_) {
+    Table *table = table_pair.second;
+    table->GC();
+  }
 }
 
 void SystemManager::Crash() {

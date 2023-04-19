@@ -102,6 +102,20 @@ RecordList PageHandle::LoadRecords() {
   return record_vector;
 }
 
+void PageHandle::GC() {
+  int slot_no = -1;
+  RecordFactory record_factory(&meta_);
+  // 遍历每一个 slot
+  while ((slot_no = bitmap_.NextNotFree(slot_no)) != -1) {
+    Record *record = record_factory.LoadRecord(slots_ + slot_no * record_length_);
+    XID delete_xid = RecordFactory::GetDeleteXid(record);
+    if (delete_xid > 0) { // 已经被删除，即可回收
+      DeleteRecord(slot_no);
+      meta_.first_free_ = page_->GetPageId().page_no;
+    }
+  }
+}
+
 uint8_t *PageHandle::GetRaw(SlotID slot_no) { return slots_ + slot_no * record_length_; }
 
 Record *PageHandle::GetRecord(SlotID slot_no) {

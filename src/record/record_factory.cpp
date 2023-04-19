@@ -37,7 +37,7 @@ Record *RecordFactory::ConstString(string v) {
 }
 
 Field *RecordFactory::LoadField(const void *src, FieldType ft, FieldSize fs) {
-  std::cerr << "< ---------------- RecordFactory::LoadField ---------------- >\n";
+  // std::cerr << "< ---------------- RecordFactory::LoadField ---------------- >\n";
   // TODO: 字段反序列化
   // TIPS: 利用Field的Load函数，分类返回对应类型的Field指针
   // LAB 1 BEGIN
@@ -55,7 +55,7 @@ Field *RecordFactory::LoadField(const void *src, FieldType ft, FieldSize fs) {
 }
 
 void RecordFactory::StoreField(void *dst, Field *field, FieldType ft, FieldSize fs) {
-  std::cerr << "< ---------------- RecordFactory::StoreField ---------------- >\n";
+  // std::cerr << "< ---------------- RecordFactory::StoreField ---------------- >\n";
   // TODO: 字段序列化
   // TIPS: 利用Field的Store函数
   // LAB 1 BEGIN
@@ -71,9 +71,9 @@ void RecordFactory::StoreField(void *dst, Field *field, FieldType ft, FieldSize 
 }
 
 Record *RecordFactory::LoadRecord(const void *src) const {
-  std::cerr << "< ---------------- RecordFactory::LoadRecord ---------------- >\n";
+  // std::cerr << "< ---------------- RecordFactory::LoadRecord ---------------- >\n";
   // printf("src: %p\n", src);
-  std::cerr << "src: " << (size_t)src << "\n";
+  // std::cerr << "src: " << (size_t)src << "\n";
   // TODO: 记录反序列化
   // TIPS: 通过TableMeta可以读取各个字段的属性和长度，利用LoadField函数建立各个字段对应的Field指针。
   // LAB 1 BEGIN
@@ -89,9 +89,9 @@ Record *RecordFactory::LoadRecord(const void *src) const {
 }
 
 void RecordFactory::StoreRecord(void *dst, Record *record) const {
-  std::cerr << "< ---------------- RecordFactory::StoreRecord ---------------- >\n";
+  // std::cerr << "< ---------------- RecordFactory::StoreRecord ---------------- >\n";
   // printf("dst: %p\n", dst);
-  std::cerr << "dst: " << (size_t)dst << "\n";
+  // std::cerr << "dst: " << (size_t)dst << "\n";
   // TODO: 记录序列化
   // TIPS: 通过TableMeta可以读取各个字段的属性和长度，利用StoreField函数对于各个指针进行序列化。
   // TIPS: 友元可以直接访问私有变量
@@ -101,8 +101,8 @@ void RecordFactory::StoreRecord(void *dst, Record *record) const {
   for(size_t i = 0; i < record->GetSize(); ++i) {
     auto field = record->GetField(i);
     auto col = meta_->cols_[i];
-    std::cerr << "col.type: " << (int)col.type_ << " col.len: " << col.len_ << "\n";
-    std::cerr << "field.type: " << (int)field->GetType() << " field.len: " << field->GetSize() << "\n";
+    // std::cerr << "col.type: " << (int)col.type_ << " col.len: " << col.len_ << "\n";
+    // std::cerr << "field.type: " << (int)field->GetType() << " field.len: " << field->GetSize() << "\n";
     if (field->GetType() != col.type_) throw UnsupportFieldError();
     StoreField(static_cast<uint8_t *>(dst) + offset, field, col.type_, col.len_);
     offset += col.len_;

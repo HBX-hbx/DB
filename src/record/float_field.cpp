@@ -13,16 +13,16 @@ FloatField::FloatField() { size_ = 8; }
 
 void FloatField::Load(const void *src, int s) {
   assert(s == size_);
-  std::cerr << "< ------------- FloatField::Load ------------- >\n";
+  // std::cerr << "< ------------- FloatField::Load ------------- >\n";
   memcpy(&val_, src, s);
   // printf("load from: %p\n", src);
-  std::cerr << "val_: " << val_ << "\n";
+  // std::cerr << "val_: " << val_ << "\n";
 }
 void FloatField::Store(void *dst, int s) const {
   assert(s == size_);
-  std::cerr << "< ------------- FloatField::Store ------------- >\n";
+  // std::cerr << "< ------------- FloatField::Store ------------- >\n";
   // printf("store to: %p\n", dst);
-  std::cerr << "val_: " << val_ << "\n";
+  // std::cerr << "val_: " << val_ << "\n";
   memcpy(dst, &val_, s);
 }
 FieldType FloatField::GetType() const { return FieldType::FLOAT; }

@@ -40,6 +40,7 @@ class SystemManager {
   void StoreMasterRecord();
   void UsingTest();
   void Analyze();
+  void GC();
 
  public:
   Table *GetTable(const std::string &table_name);
