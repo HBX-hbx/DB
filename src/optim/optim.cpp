@@ -9,6 +9,8 @@
 #include "../oper/conditions/conditions.h"
 #include "../oper/conditions/join_condition.h"
 #include "../oper/nodes.h"
+#include "oper/conditions/logic_condition.h"
+#include "oper/join_node.h"
 #include "stats_manager.h"
 #include "../system/system_manager.h"
 #include "../utils/graph.h"
@@ -127,6 +129,34 @@ std::any Optimizer::visit(Select *select) {
   // TIPS: 使用 uf_set 维护表的连接关系
   // TIPS: 需维护 table_shift_ 中的偏移量，以使投影算子可以正常工作
   // LAB 4 BEGIN
+  for (auto &pair: table_filter_) {
+    string join_table_name = pair.first;
+    JoinCondition *join_condition = (JoinCondition *)pair.second;
+
+    size_t pos = join_table_name.find(delimiter);
+    string lhs_table_name = join_table_name.substr(0, pos);
+    lhs_table_name = uf_set.Find(lhs_table_name);
+    string rhs_table_name = join_table_name.substr(pos + 1, join_table_name.size());
+    rhs_table_name = uf_set.Find(rhs_table_name);
+
+    vector<string> lhs_all_tables = uf_set.FindAll(lhs_table_name);
+    vector<string> rhs_all_tables = uf_set.FindAll(rhs_table_name);
+    int shift_offset = 0;
+    // 统计左边 table 家族中所有已连接的表的总列数，作为右边 table 家族增加的偏移量
+    for (auto &lhs_table: lhs_all_tables) {
+      shift_offset += meta_->GetTable(lhs_table)->GetColumnSize();
+    }
+    for (auto &rhs_table: rhs_all_tables) {
+      table_shift_[rhs_table] += shift_offset;
+    }
+    table_map[lhs_table_name] = new JoinNode(
+        table_map[lhs_table_name], 
+        table_map[rhs_table_name], 
+        join_condition
+      );
+    
+    uf_set.Union(rhs_table_name, lhs_table_name);
+  }
   // LAB 4 END
 
   string first_table = uf_set.Find(select->tables_[0]);
@@ -207,6 +237,16 @@ std::any Optimizer::visit(JoinConditionNode *cond) {
   // TIPS: 将 JoinCondition 添加到 table_filter_ 中
   // TIPS: 可以将两个表名组合成一个新的表名，以 delimiter 变量为分隔符，作为 table_filter_ 的 key
   // LAB 4 BEGIN
+  string table_name = cond->lhs_->table_name_ + delimiter + cond->rhs_->table_name_;
+  int idx_left = meta_->GetTable(cond->lhs_->table_name_)->GetColumnIdx(cond->lhs_->col_name_);
+  int idx_right = meta_->GetTable(cond->rhs_->table_name_)->GetColumnIdx(cond->rhs_->col_name_);
+  Condition *condition = new JoinCondition(idx_left, idx_right);
+  if (table_filter_.find(table_name) == table_filter_.end()) {
+    table_filter_[table_name] = condition;
+    condition = nullptr;
+  }
+  std::pair<string, Condition *> cpair{table_name, condition};
+  return cpair;
   // LAB 4 END
 }
 
@@ -217,6 +257,24 @@ std::any Optimizer::visit(AndConditionNode *and_condition) {
   // TIPS: 将 Condition 记录在 table_filter_ 中
   // TIPS: 函数需要添加返回值，否则可能出现段错误
   // LAB 4 BEGIN
+  auto res = and_condition->rhs_->accept(this);
+  if (res.has_value()) {
+    auto cpair = std::any_cast<std::pair<string, Condition *>>(res);
+    string table_name = cpair.first;
+    if (cpair.second != nullptr) {
+      table_filter_[table_name] = new AndCondition({table_filter_[table_name], cpair.second});
+    }
+  }
+  res = and_condition->lhs_->accept(this);
+  if (res.has_value()) {
+    auto cpair = std::any_cast<std::pair<string, Condition *>>(res);
+    string table_name = cpair.first;
+    if (cpair.second != nullptr) {
+      table_filter_[table_name] = new AndCondition({table_filter_[table_name], cpair.second});
+    }
+  }
+  std::any null;
+  return null;
   // LAB 4 END
 }
 
@@ -224,6 +282,24 @@ std::any Optimizer::visit(OrConditionNode *or_condition) {
   // TODO: 条件析取
   // TIPS: 与 AndCondition 流程相同
   // LAB 4 BEGIN
+  auto res = or_condition->rhs_->accept(this);
+  if (res.has_value()) {
+    auto cpair = std::any_cast<std::pair<string, Condition *>>(res);
+    string table_name = cpair.first;
+    if (cpair.second != nullptr) {
+      table_filter_[table_name] = new OrCondition({table_filter_[table_name], cpair.second});
+    }
+  }
+  res = or_condition->lhs_->accept(this);
+  if (res.has_value()) {
+    auto cpair = std::any_cast<std::pair<string, Condition *>>(res);
+    string table_name = cpair.first;
+    if (cpair.second != nullptr) {
+      table_filter_[table_name] = new OrCondition({table_filter_[table_name], cpair.second});
+    }
+  }
+  std::any null;
+  return null;
   // LAB 4 END
 }
 
