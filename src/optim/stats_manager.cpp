@@ -5,6 +5,7 @@
 #include "oper/scan_node.h"
 #include "record/fields.h"
 #include "system/system_manager.h"
+#include "utils/histogram.h"
 
 namespace dbtrain {
 
@@ -67,6 +68,30 @@ bool StatsManager::Analyze(string table_name, int col_idx) {
   // TIPS: 依据实现方式，可以选择跳过已经存在的直方图，或者选择更新直方图
   // TIPS: 基于表存储的数据初始化直方图，建议基础功能中采用默认构造参数
   // LAB 5 BEGIN
+  string stats_name = GetStatsName(table_name, col_idx);
+  // 找得到，直接返回 false
+  if (stats_map_.find(stats_name) != stats_map_.end()) return false;
+
+  Table *table = SystemManager::GetInstance().GetTable(table_name);
+  TableScanNode *node = new TableScanNode(table);
+  // 获取表的所有记录
+  RecordList record_list{};
+  vector<double> val_list{};
+  auto next_list = node->Next();
+  while (next_list.size() > 0) {
+    record_list.insert(record_list.end(), next_list.begin(), next_list.end());
+    next_list = node->Next();
+  }
+  // 遍历表的所有记录，获得所有值，push 进 val_list
+  for (auto record: record_list) {
+    val_list.push_back(GetRecordValue(record, col_idx));
+  }
+
+  Histogram *histogram = new Histogram();
+  histogram->Init(val_list);
+  stats_map_[stats_name] = histogram;
+
+  return true; // 找不到，返回 true
   // LAB 5 END
 }
 

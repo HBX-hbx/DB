@@ -1,5 +1,6 @@
 #include "optim.h"
 
+#include <cfloat>
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
@@ -121,6 +122,82 @@ std::any Optimizer::visit(Select *select) {
   // TIPS: 可以新建vector保存join顺序并修改LAB 3生成执行计划的顺序
   // TIPS: 注意，文档中给出了一个简单的例子
   // LAB 5 BEGIN
+  // (1) 估计join操作前table_map各个算子的基数
+  std::map<string, double> costs;
+  double min_cost = DBL_MAX;
+  string min_table_name; // 开始 bfs 的 table_name
+  for (auto &table_pair: table_map) {
+    string table_name = table_pair.first;
+    double cost = table_pair.second->Cost();
+    costs[table_name] = cost;
+    if (cost < min_cost) {
+      min_cost = cost;
+      min_table_name = table_name;
+    }
+  }
+  // (2) 按照join构建表的连接图（无向图位于utils/graph）
+  auto graph = new UndirectedGraph<std::pair<string, double>>;
+  // 根据 table_filter 构建无向图，加边
+  for (auto &join_pair: table_filter_) {
+    string join_table_name = join_pair.first;
+    size_t pos = join_table_name.find(delimiter);
+    string lhs_table_name = join_table_name.substr(0, pos);
+    string rhs_table_name = join_table_name.substr(pos + 1, join_table_name.size());
+
+    graph->AddEdge({lhs_table_name, costs[lhs_table_name]}, {rhs_table_name, costs[rhs_table_name]});
+  }
+  // (3) 按照算子基数，从基数最低的节点开始进行宽度优先搜索BFS，按照结点添加顺序生成join顺序
+  std::queue<string> q; // bfs 队列
+  std::map<string, bool> visited; // 是否访问过该 table 节点
+  vector<string> order; // 连接顺序，比如 t1.t2, t2.t3 ...
+  vector<std::pair<string, double>> neighbors;
+
+  q.push(min_table_name);
+  visited[min_table_name] = true;
+  while(!q.empty()) {
+    string curr = q.front();
+    q.pop();
+    min_cost = DBL_MAX; // 对当前节点 curr，找到最小基数结点，并添加到已连接结点集
+
+    bool exist_non_visited_neighbor = false; // 是否存在未访问过的邻居
+    for (auto adj_table_pair: graph->Adjace({curr, costs[curr]})) {
+      neighbors.push_back(adj_table_pair);
+    }
+    for (auto neighbor_pair: neighbors) {
+      // 没访问过，则访问
+      if (!visited[neighbor_pair.first]) {
+        exist_non_visited_neighbor = true;
+        double cost = neighbor_pair.second;
+        if (cost < min_cost) {
+          min_cost = cost;
+          min_table_name = neighbor_pair.first;
+        }
+      }
+    }
+    // 删除选中的节点
+    std::pair<string, double> ele = {min_table_name, costs[min_table_name]};
+    neighbors.erase(std::remove(neighbors.begin(), neighbors.end(), ele), neighbors.end());
+    if (exist_non_visited_neighbor) {
+      visited[min_table_name] = true;
+      q.push(min_table_name);
+      // 在已连接的所有节点里，找能跟 table_filter 里匹配上的加进 order 中
+      for (auto &visited_pair: visited) {
+        // 已经连接的
+        if (visited_pair.second) {
+          string join_table_name = visited_pair.first + delimiter + min_table_name;
+          // 可能是反序的，试着反过来看看
+          if (table_filter_.find(join_table_name) == table_filter_.end()) {
+            join_table_name = min_table_name + delimiter + visited_pair.first;
+          }
+          // 如果找到了，就加进去 order，并且 break
+          if (table_filter_.find(join_table_name) != table_filter_.end()) {
+            order.push_back(join_table_name);
+            break;
+          }
+        }
+      }
+    }
+  }
   // LAB 5 END
 
   // TODO: 添加连接算子
@@ -129,9 +206,8 @@ std::any Optimizer::visit(Select *select) {
   // TIPS: 使用 uf_set 维护表的连接关系
   // TIPS: 需维护 table_shift_ 中的偏移量，以使投影算子可以正常工作
   // LAB 4 BEGIN
-  for (auto &pair: table_filter_) {
-    string join_table_name = pair.first;
-    JoinCondition *join_condition = (JoinCondition *)pair.second;
+  for (auto &join_table_name: order) {
+    JoinCondition *join_condition = (JoinCondition *)table_filter_[join_table_name];
 
     size_t pos = join_table_name.find(delimiter);
     string lhs_table_name = join_table_name.substr(0, pos);

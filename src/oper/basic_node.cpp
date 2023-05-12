@@ -1,8 +1,12 @@
 #include "basic_node.h"
 
+#include <cfloat>
 #include <cmath>
 
 #include "conditions/conditions.h"
+#include "oper/conditions/algebra_condition.h"
+#include "oper/conditions/logic_condition.h"
+#include "oper/db_node.h"
 #include "optim/stats_manager.h"
 #include "record/fields.h"
 
@@ -111,6 +115,64 @@ double FilterNode::Cost() {
   // TIPS: 此外，多个属性同时存在过滤条件时简化假设各个属性互相独立
   // TIPS: 利用StatsManager的相关函数可以估计过滤条件所占比例
   // LAB 5 BEGIN
+  // 1.无过滤条件
+  if (cond_ == nullptr) return childs_[0]->Cost();
+
+  // 2.单过滤条件，无 and
+  AndCondition* and_condition = dynamic_cast<AndCondition*>(cond_);
+  if (and_condition == nullptr) {
+    double lower = DBL_MIN, upper = DBL_MAX;
+    // 获得约束列 id，以及上下界
+    int col_idx = UpdateBound(cond_, lower, upper);
+    // 获得数据比例
+    double proportion = StatsManager::GetInstance().RangeBound(tname_, col_idx, lower, upper);
+    // 返回基数
+    return proportion * childs_[0]->Cost();
+  }
+
+  // 3.多过滤条件，有 and
+  std::map<int, std::pair<double, double>> col_idx_to_bounds; // 记录 col_idx -> {lower, upper}
+  vector<Condition *> conds = and_condition->GetConditions();
+  // 递归处理左深树
+  while (true) {
+    // 先处理右边条件，由于左深树，一定为 AlgebraCondition
+    AlgebraCondition *ri_cond = dynamic_cast<AlgebraCondition *>(conds[1]);
+    int col_idx = ri_cond->GetIdx();
+    // 找不到，则新建一个映射
+    if (col_idx_to_bounds.find(col_idx) == col_idx_to_bounds.end()) {
+      col_idx_to_bounds[col_idx] = {
+        DBL_MIN, 
+        DBL_MAX
+      };
+    }
+    UpdateBound(ri_cond, col_idx_to_bounds[col_idx].first, col_idx_to_bounds[col_idx].second);
+
+    // 再处理左边条件，可能为 AndCondition 继续递归
+    AlgebraCondition *le_cond = dynamic_cast<AlgebraCondition *>(conds[0]);
+    if (le_cond != nullptr) { // 说明达到递归叶子，break
+      // 处理与右边条件一致
+      int col_idx = le_cond->GetIdx();
+      // 找不到，则新建一个映射
+      if (col_idx_to_bounds.find(col_idx) == col_idx_to_bounds.end()) {
+        col_idx_to_bounds[col_idx] = {
+          DBL_MIN, 
+          DBL_MAX
+        };
+      }
+      UpdateBound(le_cond, col_idx_to_bounds[col_idx].first, col_idx_to_bounds[col_idx].second);
+      break;
+    }
+    conds = dynamic_cast<AndCondition *>(conds[0])->GetConditions();
+  }
+  // 统计总基数
+  double proportion = 1.0;
+  for (auto &col_idx_to_bound: col_idx_to_bounds) {
+    int col_idx = col_idx_to_bound.first;
+    int lower = col_idx_to_bound.second.first;
+    int upper = col_idx_to_bound.second.second;
+    proportion *= StatsManager::GetInstance().RangeBound(tname_, col_idx, lower, upper);
+  }
+  return proportion * childs_[0]->Cost();
   // LAB 5 END
 }
 
