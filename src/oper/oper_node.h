@@ -3,6 +3,7 @@
 
 #include "../defines.h"
 #include "../record/record.h"
+#include "../parser/ast.h"
 
 namespace dbtrain {
 

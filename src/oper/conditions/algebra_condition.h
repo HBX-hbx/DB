@@ -11,6 +11,7 @@ class AlgebraCondition : public Condition {
   ~AlgebraCondition();
 
   int GetIdx() const;
+  vector<int> GetColIdxs() const override;
   Field *GetField() const;
 
  protected:

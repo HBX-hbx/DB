@@ -13,6 +13,7 @@ class JoinCondition : public Condition {
 
   bool Fit(Record *record) const override;
   bool Fit(Record *left, Record *right) const;
+  vector<int> GetColIdxs() const override;
 
   void LeftShift(int delta);
   void RightShift(int delta);

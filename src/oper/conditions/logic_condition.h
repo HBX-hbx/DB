@@ -11,6 +11,7 @@ class AndCondition : public Condition {
   ~AndCondition();
   bool Fit(Record *record) const override;
   void PushBack(Condition *cond);
+  vector<int> GetColIdxs() const override;
 
   virtual void Display() const override;
 
@@ -26,6 +27,7 @@ class OrCondition : public Condition {
   ~OrCondition();
   bool Fit(Record *record) const override;
   void PushBack(Condition *cond);
+  vector<int> GetColIdxs() const override;
 
   virtual void Display() const override;
 
@@ -38,6 +40,7 @@ class NotCondition : public Condition {
   NotCondition(Condition *cond);
   ~NotCondition();
   bool Fit(Record *record) const override;
+  vector<int> GetColIdxs() const override;
 
   virtual void Display() const override;
 

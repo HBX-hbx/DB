@@ -13,6 +13,8 @@ class Condition {
 
   virtual bool Fit(Record *record) const = 0;
 
+  virtual vector<int> GetColIdxs() const = 0;
+
   virtual void Display() const = 0;
 
  private:

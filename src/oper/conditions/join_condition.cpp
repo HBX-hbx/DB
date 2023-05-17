@@ -13,6 +13,11 @@ bool JoinCondition::Fit(Record *left, Record *right) const {
   return left->GetField(idx_left_)->Equal(right->GetField(idx_right_));
 }
 
+vector<int> JoinCondition::GetColIdxs() const {
+  // 该函数不会被调用
+  return {idx_left_, idx_right_};
+}
+
 void JoinCondition::LeftShift(int idx) { idx_left_ += idx; }
 
 void JoinCondition::RightShift(int idx) { idx_right_ += idx; }

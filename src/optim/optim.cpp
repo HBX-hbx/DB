@@ -16,6 +16,7 @@
 #include "../system/system_manager.h"
 #include "../utils/graph.h"
 #include "../utils/uf_set.h"
+#include "table/hidden.h"
 
 namespace dbtrain {
 
@@ -99,8 +100,57 @@ std::any Optimizer::visit(Select *select) {
     table_map[table_name] = new TableScanNode(meta_->GetTable(table_name));
     table_shift_[table_name] = 0;
   }
+  // TODO: 投影下推
+  // 1. 将 select->cols 中的属性纳入（区分表）
+  // 2. 将 select->condition_ 中涉及的属性纳入（区分表）
+  // 添加投影算子
+  /// ------------------------------------------------------
+  std::unordered_map<string, int> table_col_sizes; // 记录每张表的实际投影列数，为后续连接计算 table_offset 做准备
+  if (select->condition_ != nullptr) select->condition_->accept(this); // visit 选择条件算子
+  for (const auto &table_name: select->tables_) {
+    if (!select->cols_.empty()) {
+      vector<int> proj_idxs{};
+      // 1. 将 select->cols 中的属性纳入（区分表）
+      for (const auto &col : select->cols_) {
+        // 添加同表的投影列 id
+        if (col->table_name_ == table_name) {
+          proj_idxs.push_back(meta_->GetTable(col->table_name_)->GetColumnIdx(col->col_name_));
+        }
+      }
+      // 2. 将 select->condition_ (Algebra + And)中涉及的属性纳入（区分表）
+      auto it = table_filter_.find(table_name);
+      if (it != table_filter_.end()) {
+        vector<int> col_idxs = table_filter_[table_name]->GetColIdxs();
+        for (auto &col_idx: col_idxs) {
+          proj_idxs.push_back(col_idx);
+        }
+      }
+      // 将 JoinCondition 中涉及到属性纳入（区分表）
+      for (auto &table_cond_pair: table_filter_) {
+        JoinCondition *join_cond = dynamic_cast<JoinCondition *>(table_cond_pair.second);
+        if (join_cond != nullptr) {
+          string join_table_name = table_cond_pair.first;
+          size_t pos = join_table_name.find(delimiter);
+          string lhs_table_name = join_table_name.substr(0, pos);
+          string rhs_table_name = join_table_name.substr(pos + 1, join_table_name.size());
+          if (lhs_table_name == table_name) {
+            proj_idxs.push_back(join_cond->GetLeftIdx());
+          }
+          if (rhs_table_name == table_name) {
+            proj_idxs.push_back(join_cond->GetRightIdx());
+          }
+        }
+      }
+      // 去重 + 排序
+      std::sort(proj_idxs.begin(), proj_idxs.end());
+      proj_idxs.erase(std::unique(proj_idxs.begin(), proj_idxs.end()), proj_idxs.end());
+      table_col_sizes[table_name] = proj_idxs.size();
+      table_map[table_name] = new ProjectNode(table_map[table_name], proj_idxs);
+    }
+  }
+  
+  /// ------------------------------------------------------
   // 添加选择条件算子
-  if (select->condition_ != nullptr) select->condition_->accept(this);
   for (const auto &table_name : select->tables_) {
     auto it = table_filter_.find(table_name);
     if (it != table_filter_.end()) {
@@ -220,7 +270,8 @@ std::any Optimizer::visit(Select *select) {
     int shift_offset = 0;
     // 统计左边 table 家族中所有已连接的表的总列数，作为右边 table 家族增加的偏移量
     for (auto &lhs_table: lhs_all_tables) {
-      shift_offset += meta_->GetTable(lhs_table)->GetColumnSize();
+      // shift_offset += meta_->GetTable(lhs_table)->GetColumnSize();
+      shift_offset += table_col_sizes[lhs_table] + hidden_columns.size();
     }
     for (auto &rhs_table: rhs_all_tables) {
       table_shift_[rhs_table] += shift_offset;

@@ -6,6 +6,8 @@ AlgebraCondition::~AlgebraCondition() { delete field_; }
 int AlgebraCondition::GetIdx() const { return idx_; }
 Field *AlgebraCondition::GetField() const { return field_; }
 
+vector<int> AlgebraCondition::GetColIdxs() const { return {idx_}; }
+
 EqualCondition::EqualCondition(int idx, Field *field) : AlgebraCondition(idx, field) {}
 
 bool EqualCondition::Fit(Record *record) const { return record->GetField(idx_)->Equal(field_); }

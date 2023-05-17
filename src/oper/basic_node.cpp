@@ -40,8 +40,8 @@ double ProjectNode::Cost() {
 
 void ProjectNode::Display(int depth) const {
   for (int i = 0; i < depth; ++i) printf("\t");
-  printf("Project Node:");
-  // for (const auto& idx : proj_idxs) printf("%d ", idx);
+  printf("Project Node: ");
+  for (const auto& idx : proj_idxs) printf("%d ", idx);
   printf("\n");
   for (const auto &child : childs_) child->Display(depth + 1);
 }
